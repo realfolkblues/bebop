@@ -19,12 +19,12 @@ export function name() {
 
 // tree: double, addX
 
-export double(n) {
+export function double(n) {
     return addX(n, n);
 }
 
 // tree: doublePlusOne, double, addX, increment
 
-export doublePlusOne(n) {
+export function doublePlusOne(n) {
     return increment(double(n));
 }
