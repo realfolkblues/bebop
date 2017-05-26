@@ -3,28 +3,32 @@
   "version": "0.0.1",
   "description": "Javascript ES2015 tree shaking study",
   "main": "index.js",
-  "directories": {
-    "example": "examples"
-  },
   "scripts": {
-    "alpha": "node ./alpha/fn-01"
+    "ilmente": "node ./src/alpha/ilmente/fn-01_2"
   },
   "repository": {
     "type": "git",
     "url": "git+https://ilmente@github.com/ilmente/tree-shaking-study.git"
   },
-  "contributors": [{ 
-    "name" : "Alessandro Bellini", 
-    "email" : "hello@ilmente.com",
-    "url" : "http://ilmente.com"
-  }, { 
-    "name" : "Riccardo Bevilacqua", 
-    "email" : "",
-    "url" : ""
-  }],
+  "contributors": [
+    {
+      "name": "Alessandro Bellini",
+      "email": "hello@ilmente.com",
+      "url": "http://ilmente.com"
+    },
+    {
+      "name": "Riccardo Bevilacqua",
+      "email": "",
+      "url": ""
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ilmente/tree-shaking-study/issues"
   },
-  "homepage": "https://github.com/ilmente/tree-shaking-study#readme"
+  "homepage": "https://github.com/ilmente/tree-shaking-study#readme",
+  "dependencies": {
+    "esprima": "^3.1.3",
+    "rxjs": "^5.4.0"
+  }
 }
