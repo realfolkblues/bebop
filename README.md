@@ -12,7 +12,7 @@ This project has the aim to study and hopefully develop a tree shaking algorithm
 |   |-- fn                          // function-only examples
 | 
 |-- src                             // tool actual code
-    |-- alpha                       // alpha version
+    |-- experiments                 // code experiments
         |-- ilmente                 // @ilmente code playground
         |-- riccardobevilacqua      // @riccardobevilacqua code playground
 ```
