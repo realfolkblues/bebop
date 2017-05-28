@@ -17,20 +17,19 @@ const regexp = {
     invokedFn: /\w+\s*\((\w*,?\s*\(?\)?\[?\]?)*\)(?!\s?{)/gm,
     declaredFn: /function\s+(\w+\.*)*\s*\((?!\s?{)/gm,
     brackets: /\((\w*,?\s*\(?\)?\[?\]?)*\)/gm
-}
+};
 
 class Analyzer {
+    entry: any = {};
+    imports: any = {};
 
-    constructor(entry) {
-        this.entry = path.parse(path.resolve(entry));
-        this.imports = {};
-
-        this.readFile(this.entry.dir, './' + this.entry.base);
-
-        console.log(this.imports);
+    constructor(filePath: string) {
+        this.entry = path.parse(path.resolve(filePath));  
+        this.readFile(this.entry.dir, './' + this.entry.base);      
+        console.info(this.imports);
     }
 
-    readFile(basePath, filePath, fallback = '.js') {
+    readFile(basePath: string, filePath: string, fallback: string = '.js') {
         const fullPath = path.join(basePath, filePath);
         let code = '';
 
@@ -38,7 +37,7 @@ class Analyzer {
             code = fs.readFileSync(fullPath, 'utf8');
         } catch (err) {
             if (fallback) {
-                return this.readFile(basePath, filePath + fallback, false);
+                return this.readFile(basePath, filePath + fallback);
             }
 
             throw err;
@@ -57,7 +56,7 @@ class Analyzer {
         this.getFunctions(fullPath, code);
     }
 
-    loadFiles(originPath, code) {
+    loadFiles(originPath: string, code: string) {
         const imports = code.match(regexp.from) || [];
 
         imports
@@ -78,7 +77,7 @@ class Analyzer {
             });
     }
 
-    getFunctions(originPath, code) {
+    getFunctions(originPath: string, code: string) {
         let invokedFn = code.match(regexp.invokedFn) || [];
         let declaredFn = code.match(regexp.declaredFn) || [];
 
@@ -86,14 +85,13 @@ class Analyzer {
         this.imports[originPath].declaredFn = declaredFn.map(this.cleanFunction);
     }
 
-    cleanFunction(str) {
+    cleanFunction(str: string): string {
         return str
             .replace(/function/g, '')
             .replace(regexp.brackets, '')
             .replace('(', '')
             .trim();
     }
-
 }
 
 const analyzer = new Analyzer('./examples/fn/01/index.js');
