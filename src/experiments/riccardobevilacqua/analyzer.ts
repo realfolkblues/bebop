@@ -31,19 +31,31 @@ const regexp = {
 class Analyzer {
     entry: any = {};
     imports: any = {};
+    tree: any = [];
 
     constructor(filePath: string) {
         // this.entry = path.parse(path.resolve(filePath));  
         // this.readFile(this.entry.dir, './' + this.entry.base);      
-        // console.info(this.imports);
-        this.readStream(filePath);
+        // console.info(this.entry);
+        this.analyzeStream(filePath);
     }
 
-    readStream(filePath: string) {
+    analyzeStream(filePath) {
         const readableStream = fs.createReadStream(path.resolve(filePath)).setEncoding(selectedEncoding);
         const rl = readline.createInterface({
-            input: readableStream,
-            output: process.stdout
+            input: readableStream
+        });
+
+        this.tree.push({
+            filePath: filePath
+        });
+
+        rl.on('line', (line) => {
+            if (line.match(regexp.from)) {
+                console.log(line + ' ---> import');
+            } else if (line.match(regexp.invokedFn)) {
+                console.log(line + ' ---> invoked function');
+            }
         });
     }
 
