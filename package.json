@@ -4,7 +4,8 @@
   "description": "Javascript ES2015 tree shaking study",
   "main": "index.js",
   "scripts": {
-    "ilmente": "node ./src/experiments/ilmente/fn-01_2"
+    "ilmente": "node ./src/experiments/ilmente/fn-01_2",
+    "analyze": "node ./dist/js/bundle.js"
   },
   "repository": {
     "type": "git",
