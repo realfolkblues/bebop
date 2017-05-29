@@ -1,17 +1,26 @@
 /**
- * ******** *
- *          *
- * ANALYZER *
- *          *
- * ******** *
+ * ****************************************************** *
+ *                                                        *
+ *                        ANALYZER                        *
+ *                                                        *
+ * ****************************************************** *
  * This library aims to:
  * 1) Access source code
  * 2) Detect dependencies tree and its properties
+ * 
+ * Necessary and sufficient info to include a function in the output:
+ * 1) origin
+ * 2) origin imports
+ * 3) origin invoked functions
+ * 4) origin exported functions
+ * 5) origin private declared functions
  */
 
 const fs = require('fs');
 const path = require('path');
+const readline = require('readline');
 
+const selectedEncoding = 'utf8';
 const regexp = {
     from: /from\s+('|")(\w?.\\?)+('|")/gm,
     invokedFn: /\w+\s*\((\w*,?\s*\(?\)?\[?\]?)*\)(?!\s?{)/gm,
@@ -24,9 +33,18 @@ class Analyzer {
     imports: any = {};
 
     constructor(filePath: string) {
-        this.entry = path.parse(path.resolve(filePath));  
-        this.readFile(this.entry.dir, './' + this.entry.base);      
-        console.info(this.imports);
+        // this.entry = path.parse(path.resolve(filePath));  
+        // this.readFile(this.entry.dir, './' + this.entry.base);      
+        // console.info(this.imports);
+        this.readStream(filePath);
+    }
+
+    readStream(filePath: string) {
+        const readableStream = fs.createReadStream(path.resolve(filePath)).setEncoding(selectedEncoding);
+        const rl = readline.createInterface({
+            input: readableStream,
+            output: process.stdout
+        });
     }
 
     readFile(basePath: string, filePath: string, fallback: string = '.js') {
