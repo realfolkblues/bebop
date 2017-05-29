@@ -41,22 +41,47 @@ class Analyzer {
     }
 
     analyzeStream(filePath) {
+        const self = this;
         const readableStream = fs.createReadStream(path.resolve(filePath)).setEncoding(selectedEncoding);
         const rl = readline.createInterface({
             input: readableStream
         });
+        let deps: string[] = [];
+        let invokedFn: string[] = [];
 
         this.tree.push({
             filePath: filePath
-        });
+        });        
 
         rl.on('line', (line) => {
             if (line.match(regexp.from)) {
-                console.log(line + ' ---> import');
+                deps.push(line);
             } else if (line.match(regexp.invokedFn)) {
-                console.log(line + ' ---> invoked function');
+                invokedFn.push(line);
             }
         });
+
+        rl.on('close', () => {
+            self.updateTreeElement({
+                filePath: filePath,
+                deps: deps,
+                invokedFn: invokedFn
+            });
+
+            console.info(self.tree);
+        });
+    }
+
+    updateTreeElement(data) {
+        const itemIndex = this.tree.findIndex((item) => {
+            return item.filePath === data.filePath;
+        });
+
+        this.tree[itemIndex] = {
+            filePath: data.filePath,
+            deps: data.deps,
+            invokedFn: data.invokedFn
+        };
     }
 
     readFile(basePath: string, filePath: string, fallback: string = '.js') {
