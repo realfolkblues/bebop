@@ -47,6 +47,7 @@ class Analyzer {
             input: readableStream
         });
         let deps: string[] = [];
+        let declaredFn: string[] = [];
         let invokedFn: string[] = [];
 
         this.tree.push({
@@ -56,6 +57,8 @@ class Analyzer {
         rl.on('line', (line) => {
             if (line.match(regexp.from)) {
                 deps.push(line);
+            } else if (line.match(regexp.declaredFn)) {
+                declaredFn.push(line);
             } else if (line.match(regexp.invokedFn)) {
                 invokedFn.push(line);
             }
@@ -65,6 +68,7 @@ class Analyzer {
             self.updateTreeElement({
                 filePath: filePath,
                 deps: deps,
+                declaredFn: declaredFn,
                 invokedFn: invokedFn
             });
 
@@ -80,6 +84,7 @@ class Analyzer {
         this.tree[itemIndex] = {
             filePath: data.filePath,
             deps: data.deps,
+            declaredFn: data.declaredFn,
             invokedFn: data.invokedFn
         };
     }
