@@ -60,7 +60,8 @@ class Analyzer {
                 deps.push(depFullPath);
                 self.analyzeStream(depFullPath);
             } else if (line.match(regexp.declaredFn)) {
-                declaredFn.push(line);
+                const declaredFnList = line.match(regexp.declaredFn).map(self.cleanFunction);
+                declaredFn = declaredFn.concat(declaredFnList);
             } else if (line.match(regexp.invokedFn)) {
                 const invokedFnList = line.match(regexp.invokedFn).map(self.cleanFunction);
                 invokedFn = invokedFn.concat(invokedFnList);
