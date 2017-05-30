@@ -58,7 +58,10 @@ class Analyzer {
 
         rl.on('line', (line) => {
             if (line.match(regexp.from)) {
-                deps.push(self.getDepFullPath(line));
+                const depDirPath = path.dirname(filePath);
+                const depFullPath = self.getDepFullPath(depDirPath,line);
+                deps.push(depFullPath);
+                self.analyzeStream(depFullPath);
             } else if (line.match(regexp.declaredFn)) {
                 declaredFn.push(line);
             } else if (line.match(regexp.invokedFn)) {
@@ -73,14 +76,14 @@ class Analyzer {
                 declaredFn: declaredFn,
                 invokedFn: invokedFn
             });
-
+            console.log('===========================');
             console.info(self.tree);
         });
     }
 
-    getDepFullPath(line: string): string {
+    getDepFullPath(dir: string, line: string): string {
         const jsFallback = '.js';
-        const dep = line.replace(regexp.dep, '');
+        const dep = dir + line.replace(regexp.dep, '').replace(/\.\//gm, '/');
 
         return path.resolve(dep.match(regexp.js) ? dep : dep + jsFallback);
     }
