@@ -25,7 +25,9 @@ const regexp = {
     from: /from\s+('|")(\w?.\\?)+('|")/gm,
     invokedFn: /\w+\s*\((\w*,?\s*\(?\)?\[?\]?)*\)(?!\s?{)/gm,
     declaredFn: /function\s+(\w+\.*)*\s*\((?!\s?{)/gm,
-    brackets: /\((\w*,?\s*\(?\)?\[?\]?)*\)/gm
+    brackets: /\((\w*,?\s*\(?\)?\[?\]?)*\)/gm,
+    dep: /.*from\s'|';?$/gm,
+    js: /.js/gm
 };
 
 class Analyzer {
@@ -51,12 +53,12 @@ class Analyzer {
         let invokedFn: string[] = [];
 
         this.tree.push({
-            filePath: filePath
+            filePath: path.resolve(filePath)
         });        
 
         rl.on('line', (line) => {
             if (line.match(regexp.from)) {
-                deps.push(line);
+                deps.push(self.getDepFullPath(line));
             } else if (line.match(regexp.declaredFn)) {
                 declaredFn.push(line);
             } else if (line.match(regexp.invokedFn)) {
@@ -66,7 +68,7 @@ class Analyzer {
 
         rl.on('close', () => {
             self.updateTreeElement({
-                filePath: filePath,
+                filePath: path.resolve(filePath),
                 deps: deps,
                 declaredFn: declaredFn,
                 invokedFn: invokedFn
@@ -74,6 +76,13 @@ class Analyzer {
 
             console.info(self.tree);
         });
+    }
+
+    getDepFullPath(line: string): string {
+        const jsFallback = '.js';
+        const dep = line.replace(regexp.dep, '');
+
+        return path.resolve(dep.match(regexp.js) ? dep : dep + jsFallback);
     }
 
     updateTreeElement(data) {
@@ -87,70 +96,6 @@ class Analyzer {
             declaredFn: data.declaredFn,
             invokedFn: data.invokedFn
         };
-    }
-
-    readFile(basePath: string, filePath: string, fallback: string = '.js') {
-        const fullPath = path.join(basePath, filePath);
-        let code = '';
-
-        try {
-            code = fs.readFileSync(fullPath, 'utf8');
-        } catch (err) {
-            if (fallback) {
-                return this.readFile(basePath, filePath + fallback);
-            }
-
-            throw err;
-        }
-
-        this.imports[fullPath] = this.imports[fullPath] || {
-            code: null,
-            deps: [],
-            invokedFn: [],
-            declaredFn: []
-        };
-
-        this.imports[fullPath].code = this.imports[fullPath].code || code;
-        
-        this.loadFiles(fullPath, code);
-        this.getFunctions(fullPath, code);
-    }
-
-    loadFiles(originPath: string, code: string) {
-        const imports = code.match(regexp.from) || [];
-
-        imports
-            .map(match => {
-                let filePath = match
-                    .replace('from', '')
-                    .trim();
-                filePath = decodeURI(filePath)
-                    .replace(/'/g, '')
-                    .replace(/"/g, '');
-
-                return filePath;
-            })
-            .forEach(filePath => {
-                const fullPath = path.join(path.dirname(originPath), filePath);
-                this.imports[originPath].deps.push(fullPath);
-                this.readFile(path.dirname(originPath), filePath);
-            });
-    }
-
-    getFunctions(originPath: string, code: string) {
-        let invokedFn = code.match(regexp.invokedFn) || [];
-        let declaredFn = code.match(regexp.declaredFn) || [];
-
-        this.imports[originPath].invokedFn = invokedFn.map(this.cleanFunction);
-        this.imports[originPath].declaredFn = declaredFn.map(this.cleanFunction);
-    }
-
-    cleanFunction(str: string): string {
-        return str
-            .replace(/function/g, '')
-            .replace(regexp.brackets, '')
-            .replace('(', '')
-            .trim();
     }
 }
 
