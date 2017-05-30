@@ -59,10 +59,10 @@ class Analyzer {
     tree: any = [];
 
     constructor(filePath: string) {
-        this.analyzeStream(filePath);
+        this.detectDep(filePath);
     }
 
-    analyzeStream(filePath) {
+    detectDep(filePath) {
         const self = this;
         const readableStream = fs.createReadStream(path.resolve(filePath)).setEncoding(selectedEncoding);
         const rl = readline.createInterface({
@@ -81,7 +81,7 @@ class Analyzer {
                 const depDirPath = path.dirname(filePath);
                 const depFullPath = self.getDepFullPath(depDirPath,line);
                 deps.push(depFullPath);
-                self.analyzeStream(depFullPath);
+                self.detectDep(depFullPath);
             } else if (line.match(regexp.declaredFn)) {
                 const declaredFnList = line.match(regexp.declaredFn).map(self.cleanFunction);
                 declaredFn = declaredFn.concat(declaredFnList);
@@ -89,9 +89,7 @@ class Analyzer {
                 const invokedFnList = line.match(regexp.invokedFn).map(self.cleanFunction);
                 invokedFn = invokedFn.concat(invokedFnList);
             }
-        });
-
-        rl.on('close', () => {
+        }).on('close', () => {
             self.updateTreeElement({
                 filePath: path.resolve(filePath),
                 deps: deps,
@@ -100,6 +98,7 @@ class Analyzer {
             });
             console.log('===========================');
             console.info(self.tree);
+            console.log('===========================');
         });
     }
 
