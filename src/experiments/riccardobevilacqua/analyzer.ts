@@ -14,6 +14,29 @@
  * 3) origin invoked functions
  * 4) origin exported functions
  * 5) origin private declared functions
+ * 
+ * Example 01
+ * 
+ * Analysis of index.js should prduce:
+ * 1) Modules:
+ *      - lib
+ * 2) Declared functions: none
+ * 3) Invoked functions:
+ *      - name
+ *      - doublePlusOne
+ *      - console.log
+ * 
+ * Analysis of lib.js should produce:
+ * 1) Modules: none
+ * 2) Declared functions:
+ *      - name (exported)
+ *      - double (exported)
+ *      - doublePlusOne (exported)
+ *      - subX (since it is never used it should be excluded in final output)
+ * 3) Invoked functions:
+ *      - increment
+ *      - double
+ *      - addX
  */
 
 const fs = require('fs');
