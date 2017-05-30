@@ -23,7 +23,7 @@ const readline = require('readline');
 const selectedEncoding = 'utf8';
 const regexp = {
     from: /from\s+('|")(\w?.\\?)+('|")/gm,
-    invokedFn: /\w+\s*\((\w*,?\s*\(?\)?\[?\]?)*\)(?!\s?{)/gm,
+    invokedFn: /(\w+\.)*\w+\s*\(/gm,
     declaredFn: /function\s+(\w+\.*)*\s*\((?!\s?{)/gm,
     brackets: /\((\w*,?\s*\(?\)?\[?\]?)*\)/gm,
     dep: /.*from\s'|';?$/gm,
@@ -36,9 +36,6 @@ class Analyzer {
     tree: any = [];
 
     constructor(filePath: string) {
-        // this.entry = path.parse(path.resolve(filePath));  
-        // this.readFile(this.entry.dir, './' + this.entry.base);      
-        // console.info(this.entry);
         this.analyzeStream(filePath);
     }
 
@@ -65,7 +62,8 @@ class Analyzer {
             } else if (line.match(regexp.declaredFn)) {
                 declaredFn.push(line);
             } else if (line.match(regexp.invokedFn)) {
-                invokedFn.push(line);
+                const invokedFnList = line.match(regexp.invokedFn).map(self.cleanFunction);
+                invokedFn = invokedFn.concat(invokedFnList);
             }
         });
 
@@ -99,6 +97,14 @@ class Analyzer {
             declaredFn: data.declaredFn,
             invokedFn: data.invokedFn
         };
+    }
+
+    cleanFunction(str: string): string {
+        return str
+            .replace(/function/g, '')
+            .replace(regexp.brackets, '')
+            .replace('(', '')
+            .trim();
     }
 }
 
