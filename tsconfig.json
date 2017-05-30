@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
-        "outFile": "./dist/js/bundle.js"
+        "outFile": "./dist/js/bundle.js",
+        "target": "es2015"
     },
     "include": [
         "src/**/*.ts"
