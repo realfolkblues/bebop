@@ -42,22 +42,27 @@
 const fs = require('fs');
 const path = require('path');
 const esprima = require('esprima');
-const Rx = require('rxjs');
-
-const selectedEncoding = 'utf8';
+const Rx = require('rxjs/Rx');
 
 class Analyzer {
+    deps: any = new Rx.Subject();
+    dirPath: string;
+    encoding: string;
     tree: any = [];
 
-    constructor(dirPath: string) {
-        const deps = new Rx.Subject();
+    constructor(dirPath: string, encoding: string = 'utf8') {
+        this.dirPath = dirPath;
+        this.encoding = encoding;
+        this.detectDeps();
+    }
 
-        const files = deps
+    detectDeps() {
+        const files = this.deps
             .startWith('index')
-            .map(dep => path.resolve(dirPath, dep) + '.js');
+            .map(dep => path.resolve(this.dirPath, dep) + '.js');
 
         const nodes = files
-            .flatMap(file => Rx.Observable.bindNodeCallback(fs.readFile)(file, 'utf8'))
+            .flatMap(file => Rx.Observable.bindNodeCallback(fs.readFile)(file, this.encoding))
             .flatMap(code => Rx.Observable.fromEventPattern(handler => esprima.parse(code, { sourceType: 'module' }, handler)));
 
         const imports = nodes
@@ -77,14 +82,13 @@ class Analyzer {
             .map(node => node.declaration.id.name);
 
         imports.subscribe(value => {
-            deps.next(value);
+            this.deps.next(value);
             console.log('import from', value);
         });
         declared.subscribe(value => console.log('declare', value));
         invokes.subscribe(value => console.log('invoke', value));
         exported.subscribe(value => console.log('export', value));
     }
-
 }
 
 const analyzer = new Analyzer('./examples/fn/01/');
