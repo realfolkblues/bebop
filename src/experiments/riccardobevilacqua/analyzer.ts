@@ -45,15 +45,15 @@ const esprima = require('esprima');
 const Rx = require('rxjs/Rx');
 
 class Analyzer {
-    declared: any;
+    declared: any = new Rx.Observable();
     deps: any = new Rx.Subject();
     dirPath: string;
     encoding: string;
-    exported: any;
-    files: any;
-    imports: any;
-    invokes: any;
-    nodes: any;
+    exported: any = new Rx.Observable();
+    files: any = new Rx.Observable();
+    imports: any = new Rx.Observable();
+    invokes: any = new Rx.Observable();
+    nodes: any = new Rx.Observable();
     tree: any = [];
 
     constructor(dirPath: string, encoding: string = 'utf8') {
@@ -66,10 +66,10 @@ class Analyzer {
     createDepTree() {
         this.scanFiles();
         this.scanNodes();
-        this.scanImports();
         this.scanInvokes();
         this.scanDeclared();
         this.scanExported();
+        this.scanImports();
         this.createSubscriptions();
     }
 
@@ -81,8 +81,13 @@ class Analyzer {
 
     scanNodes() {
         this.nodes = this.files
-            .flatMap(file => Rx.Observable.bindNodeCallback(fs.readFile)(file, this.encoding))
-            .flatMap(code => Rx.Observable.fromEventPattern(handler => esprima.parse(code, { sourceType: 'module' }, handler)));
+            .flatMap(file => 
+                Rx.Observable.bindNodeCallback(fs.readFile)(file, this.encoding)
+            ).flatMap(code => 
+                Rx.Observable.fromEventPattern(handler => 
+                    esprima.parse(code, { sourceType: 'module' }, handler)
+                )
+            );
     }
 
     scanImports() {
@@ -110,17 +115,17 @@ class Analyzer {
     }
 
 
-    createSubscriptions(){
+    createSubscriptions(){        
         this.files.subscribe(value => {
-            this.addTreeModule(value);
-            console.log('=================================');
-            console.info(this.tree);
-            console.log('=================================');
+            this.addTreeElement(value);
+
+            console.log('======================');
+            console.log(this.tree);
+            console.log('======================');
         });
-        
+
         this.imports.subscribe(value => {
             this.deps.next(value);
-            console.log('import from', value);
         });
         
         this.declared.subscribe(value => console.log('declare', value));
@@ -130,7 +135,7 @@ class Analyzer {
         this.exported.subscribe(value => console.log('export', value));
     }
 
-    addTreeModule(modulePath: string) {
+    addTreeElement(modulePath: string) {
         this.tree.push({
             filePath: modulePath
         });
