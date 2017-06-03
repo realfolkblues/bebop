@@ -41,94 +41,50 @@
 
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
+const esprima = require('esprima');
+const Rx = require('rxjs');
 
 const selectedEncoding = 'utf8';
-const regexp = {
-    from: /from\s+('|")(\w?.\\?)+('|")/gm,
-    invokedFn: /(\w+\.)*\w+\s*\(/gm,
-    declaredFn: /function\s+(\w+\.*)*\s*\((?!\s?{)/gm,
-    brackets: /\((\w*,?\s*\(?\)?\[?\]?)*\)/gm,
-    dep: /.*from\s'|';?$/gm,
-    js: /.js/gm
-};
 
 class Analyzer {
-    entry: any = {};
-    imports: any = {};
     tree: any = [];
 
-    constructor(filePath: string) {
-        this.detectDep(filePath);
-    }
+    constructor(dirPath: string) {
+        const deps = new Rx.Subject();
 
-    detectDep(filePath) {
-        const self = this;
-        const readableStream = fs.createReadStream(path.resolve(filePath)).setEncoding(selectedEncoding);
-        const rl = readline.createInterface({
-            input: readableStream
+        const files = deps
+            .startWith('index')
+            .map(dep => path.resolve(dirPath, dep) + '.js');
+
+        const nodes = files
+            .flatMap(file => Rx.Observable.bindNodeCallback(fs.readFile)(file, 'utf8'))
+            .flatMap(code => Rx.Observable.fromEventPattern(handler => esprima.parse(code, { sourceType: 'module' }, handler)));
+
+        const imports = nodes
+            .filter(node => node.type === 'ImportDeclaration')
+            .map(node => node.source.value);
+
+        const invokes = nodes
+            .filter(node => node.type === 'CallExpression' && node.callee.type === 'Identifier')
+            .map(node => node.callee.name);
+
+        const declared = nodes
+            .filter(node => node.type === 'FunctionDeclaration')
+            .map(node => node.id.name);
+
+        const exported = nodes
+            .filter(node => node.type === 'ExportNamedDeclaration')
+            .map(node => node.declaration.id.name);
+
+        imports.subscribe(value => {
+            deps.next(value);
+            console.log('import from', value);
         });
-        let deps: string[] = [];
-        let declaredFn: string[] = [];
-        let invokedFn: string[] = [];
-
-        this.tree.push({
-            filePath: path.resolve(filePath)
-        });        
-
-        rl.on('line', (line) => {
-            if (line.match(regexp.from)) {
-                const depDirPath = path.dirname(filePath);
-                const depFullPath = self.getDepFullPath(depDirPath,line);
-                deps.push(depFullPath);
-                self.detectDep(depFullPath);
-            } else if (line.match(regexp.declaredFn)) {
-                const declaredFnList = line.match(regexp.declaredFn).map(self.cleanFunction);
-                declaredFn = declaredFn.concat(declaredFnList);
-            } else if (line.match(regexp.invokedFn)) {
-                const invokedFnList = line.match(regexp.invokedFn).map(self.cleanFunction);
-                invokedFn = invokedFn.concat(invokedFnList);
-            }
-        }).on('close', () => {
-            self.updateTreeElement({
-                filePath: path.resolve(filePath),
-                deps: deps,
-                declaredFn: declaredFn,
-                invokedFn: invokedFn
-            });
-            console.log('===========================');
-            console.info(self.tree);
-            console.log('===========================');
-        });
+        declared.subscribe(value => console.log('declare', value));
+        invokes.subscribe(value => console.log('invoke', value));
+        exported.subscribe(value => console.log('export', value));
     }
 
-    getDepFullPath(dir: string, line: string): string {
-        const jsFallback = '.js';
-        const dep = dir + line.replace(regexp.dep, '').replace(/\.\//gm, '/');
-
-        return path.resolve(dep.match(regexp.js) ? dep : dep + jsFallback);
-    }
-
-    updateTreeElement(data) {
-        const itemIndex = this.tree.findIndex((item) => {
-            return item.filePath === data.filePath;
-        });
-
-        this.tree[itemIndex] = {
-            filePath: data.filePath,
-            deps: data.deps,
-            declaredFn: data.declaredFn,
-            invokedFn: data.invokedFn
-        };
-    }
-
-    cleanFunction(str: string): string {
-        return str
-            .replace(/function/g, '')
-            .replace(regexp.brackets, '')
-            .replace('(', '')
-            .trim();
-    }
 }
 
-const analyzer = new Analyzer('./examples/fn/01/index.js');
+const analyzer = new Analyzer('./examples/fn/01/');
