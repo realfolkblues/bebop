@@ -45,59 +45,89 @@ const esprima = require('esprima');
 const Rx = require('rxjs/Rx');
 
 class Analyzer {
+    declared: any;
     deps: any = new Rx.Subject();
     dirPath: string;
     encoding: string;
+    exported: any;
+    files: any;
+    imports: any;
+    invokes: any;
+    nodes: any;
     tree: any = [];
 
     constructor(dirPath: string, encoding: string = 'utf8') {
         this.dirPath = dirPath;
         this.encoding = encoding;
-        this.detectDeps();
+
+        this.createDepTree();
     }
 
-    detectDeps() {
-        const files = this.deps
+    createDepTree() {
+        this.scanFiles();
+        this.scanNodes();
+        this.scanImports();
+        this.scanInvokes();
+        this.scanDeclared();
+        this.scanExported();
+        this.createSubscriptions();
+    }
+
+    scanFiles() {
+        this.files = this.deps
             .startWith('index')
             .map(dep => path.resolve(this.dirPath, dep) + '.js');
+    }
 
-        const nodes = files
+    scanNodes() {
+        this.nodes = this.files
             .flatMap(file => Rx.Observable.bindNodeCallback(fs.readFile)(file, this.encoding))
             .flatMap(code => Rx.Observable.fromEventPattern(handler => esprima.parse(code, { sourceType: 'module' }, handler)));
+    }
 
-        const imports = nodes
+    scanImports() {
+        this.imports = this.nodes
             .filter(node => node.type === 'ImportDeclaration')
             .map(node => node.source.value);
+    }
 
-        const invokes = nodes
+    scanInvokes() {
+        this.invokes = this.nodes
             .filter(node => node.type === 'CallExpression' && node.callee.type === 'Identifier')
             .map(node => node.callee.name);
+    }
 
-        const declared = nodes
+    scanDeclared() {
+        this.declared = this.nodes
             .filter(node => node.type === 'FunctionDeclaration')
             .map(node => node.id.name);
+    }
 
-        const exported = nodes
+    scanExported() {
+        this.exported = this.nodes
             .filter(node => node.type === 'ExportNamedDeclaration')
             .map(node => node.declaration.id.name);
+    }
 
-        files.subscribe(value => {
+
+    createSubscriptions(){
+        this.files.subscribe(value => {
             this.addTreeModule(value);
             console.log('=================================');
             console.info(this.tree);
             console.log('=================================');
         });
-
-        imports.subscribe(value => {
+        
+        this.imports.subscribe(value => {
             this.deps.next(value);
             console.log('import from', value);
         });
+        
+        this.declared.subscribe(value => console.log('declare', value));
 
-        declared.subscribe(value => console.log('declare', value));
+        this.invokes.subscribe(value => console.log('invoke', value));
 
-        invokes.subscribe(value => console.log('invoke', value));
-
-        exported.subscribe(value => console.log('export', value));
+        this.exported.subscribe(value => console.log('export', value));
     }
 
     addTreeModule(modulePath: string) {
