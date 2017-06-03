@@ -81,13 +81,29 @@ class Analyzer {
             .filter(node => node.type === 'ExportNamedDeclaration')
             .map(node => node.declaration.id.name);
 
+        files.subscribe(value => {
+            this.addTreeModule(value);
+            console.log('=================================');
+            console.info(this.tree);
+            console.log('=================================');
+        });
+
         imports.subscribe(value => {
             this.deps.next(value);
             console.log('import from', value);
         });
+
         declared.subscribe(value => console.log('declare', value));
+
         invokes.subscribe(value => console.log('invoke', value));
+
         exported.subscribe(value => console.log('export', value));
+    }
+
+    addTreeModule(modulePath: string) {
+        this.tree.push({
+            filePath: modulePath
+        });
     }
 }
 
