@@ -71,6 +71,8 @@ class Analyzer {
         this.scanExported();
         this.scanImports();
         this.createSubscriptions();
+
+        setTimeout(() => console.info(this.tree), 2000);        
     }
 
     scanFiles() {
@@ -118,26 +120,33 @@ class Analyzer {
     createSubscriptions(){        
         this.files.subscribe(value => {
             this.addTreeElement(value);
+        });
+        
+        this.declared.subscribe(value => {
+            this.tree[this.tree.length - 1].declared.push(value);
+        });
 
-            console.log('======================');
-            console.log(this.tree);
-            console.log('======================');
+        this.invokes.subscribe(value => {
+            this.tree[this.tree.length - 1].invokes.push(value);
+        });
+
+        this.exported.subscribe(value => {
+            this.tree[this.tree.length - 1].exported.push(value);
         });
 
         this.imports.subscribe(value => {
+            this.tree[this.tree.length - 1].deps.push(value);
             this.deps.next(value);
         });
-        
-        this.declared.subscribe(value => console.log('declare', value));
-
-        this.invokes.subscribe(value => console.log('invoke', value));
-
-        this.exported.subscribe(value => console.log('export', value));
     }
 
     addTreeElement(modulePath: string) {
         this.tree.push({
-            filePath: modulePath
+            filePath: modulePath,
+            deps: [],
+            invokes: [],
+            declared: [],
+            exported: []
         });
     }
 }
