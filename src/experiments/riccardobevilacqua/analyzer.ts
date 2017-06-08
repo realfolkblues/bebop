@@ -54,7 +54,7 @@ class Analyzer {
     imports: any = new Rx.Observable();
     invokes: any = new Rx.Observable();
     nodes: any = new Rx.Observable();
-    tree: any = [];
+    tree: any = new Rx.BehaviorSubject([]);
 
     constructor(dirPath: string, encoding: string = 'utf8') {
         this.dirPath = dirPath;
@@ -64,90 +64,109 @@ class Analyzer {
     }
 
     createDepTree() {
-        this.scanFiles();
-        this.scanNodes();
-        this.scanInvokes();
-        this.scanDeclared();
-        this.scanExported();
-        this.scanImports();
-        this.createSubscriptions();
-
-        setTimeout(() => console.info(this.tree), 2000);        
-    }
-
-    scanFiles() {
         this.files = this.deps
             .startWith('index')
             .map(dep => path.resolve(this.dirPath, dep) + '.js');
+
+        this.files.subscribe(file => {
+            this.analyzeFile(file);
+        }, error => {
+            console.error(error);
+        });
+
+        this.tree.subscribe({
+            next: value => {
+                console.log('==== TREE:');
+                console.info(value);
+            }
+        });
+
+        return this;
     }
 
-    scanNodes() {
-        this.nodes = this.files
+    analyzeFile(file) {
+        this.scanNodes(file)
+            .scanImports()
+            .createSubscriptions();
+    }
+
+    createTreeSnapshot(filename) {
+        let snapshot = this.tree.getValue();
+
+        snapshot.push({
+            file: filename
+        });
+
+        this.tree.next(snapshot);
+    }
+
+    scanNodes(filename) {
+        this.createTreeSnapshot(filename);
+
+        this.nodes = Rx.Observable
+            .from([filename])
             .flatMap(file => 
                 Rx.Observable.bindNodeCallback(fs.readFile)(file, this.encoding)
             ).flatMap(code => 
                 Rx.Observable.fromEventPattern(handler => 
                     esprima.parse(code, { sourceType: 'module' }, handler)
                 )
-            );
+            ).share();
+        
+        return this;
     }
 
     scanImports() {
         this.imports = this.nodes
             .filter(node => node.type === 'ImportDeclaration')
             .map(node => node.source.value);
+
+        return this;
     }
 
     scanInvokes() {
         this.invokes = this.nodes
             .filter(node => node.type === 'CallExpression' && node.callee.type === 'Identifier')
             .map(node => node.callee.name);
+
+        return this;
     }
 
     scanDeclared() {
         this.declared = this.nodes
             .filter(node => node.type === 'FunctionDeclaration')
             .map(node => node.id.name);
+
+        return this;
     }
 
     scanExported() {
         this.exported = this.nodes
             .filter(node => node.type === 'ExportNamedDeclaration')
             .map(node => node.declaration.id.name);
+
+        return this;
     }
 
 
     createSubscriptions(){        
-        this.files.subscribe(value => {
-            this.addTreeElement(value);
-        });
+        // this.declared.subscribe(value => {
         
-        this.declared.subscribe(value => {
-            this.tree[this.tree.length - 1].declared.push(value);
-        });
+        // });
 
-        this.invokes.subscribe(value => {
-            this.tree[this.tree.length - 1].invokes.push(value);
-        });
+        // this.invokes.subscribe(value => {
+        
+        // });
 
-        this.exported.subscribe(value => {
-            this.tree[this.tree.length - 1].exported.push(value);
-        });
+        // this.exported.subscribe(value => {
+        
+        // });
 
         this.imports.subscribe(value => {
-            this.tree[this.tree.length - 1].deps.push(value);
-            this.deps.next(value);
+            // this.deps.next(value);
         });
-    }
 
-    addTreeElement(modulePath: string) {
-        this.tree.push({
-            filePath: modulePath,
-            deps: [],
-            invokes: [],
-            declared: [],
-            exported: []
-        });
+        return this;
     }
 }
 
