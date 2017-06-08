@@ -20,10 +20,10 @@ files.subscribe(file => {
 
 function abc(filename) { 
     let analysis = {
-        imports: [],
-        declaredFn: [],
-        invokedFn: [],
-        exportedFn: []
+        imports: {},
+        declaredFn: {},
+        invokedFn: {},
+        exportedFn: {}
     };
 
     globalTree[filename] = analysis;
@@ -50,21 +50,26 @@ function abc(filename) {
         .filter(node => node.type === 'ExportNamedDeclaration')
         .map(node => node.declaration.id.name);
     
+    function count(type, key) {
+        globalTree[filename][type][key] =
+            !!globalTree[filename][type][key] ? globalTree[filename][type][key] + 1 : 1;
+    }
+    
     imports.subscribe(value => { 
-        globalTree[filename].imports.push(value);
+        count('imports', value);
         deps.next(value);
     });
 
     declaredFn.subscribe(value => { 
-        globalTree[filename].declaredFn.push(value);
+        count('declaredFn', value);
     });
 
     invokedFn.subscribe(value => { 
-        globalTree[filename].invokedFn.push(value);
+        count('invokedFn', value);
     });
 
     exportedFn.subscribe(value => { 
-        globalTree[filename].exportedFn.push(value);
+        count('exportedFn', value);
     });
 }
 
