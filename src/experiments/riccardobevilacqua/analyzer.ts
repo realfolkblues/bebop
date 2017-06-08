@@ -52,7 +52,7 @@ class Analyzer {
     exported: any = new Rx.Observable();
     files: any = new Rx.Observable();
     imports: any = new Rx.Observable();
-    invokes: any = new Rx.Observable();
+    invoked: any = new Rx.Observable();
     nodes: any = new Rx.Observable();
     tree: any = new Rx.BehaviorSubject([]);
 
@@ -70,12 +70,10 @@ class Analyzer {
 
         this.files.subscribe(file => {
             this.analyzeFile(file);
-        }, error => {
-            console.error(error);
         });
 
         this.tree.subscribe({
-            next: value => {
+            next: (value) => {
                 console.log('==== TREE:');
                 console.info(value);
             }
@@ -87,6 +85,9 @@ class Analyzer {
     analyzeFile(file) {
         this.scanNodes(file)
             .scanImports()
+            .scanDeclared()
+            .scanInvoked()
+            .scanExported()
             .createSubscriptions();
     }
 
@@ -101,8 +102,20 @@ class Analyzer {
         }
 
         snapshot.push({
-            file: filename
+            file: filename,
+            imports: [],
+            declared: [],
+            invoked: [],
+            exported: []
         });
+
+        this.tree.next(snapshot);
+    }
+
+    feedTreeElement(category, value) {
+        let snapshot = this.tree.getValue();
+
+        snapshot[snapshot.length - 1][category].push(value);
 
         this.tree.next(snapshot);
     }
@@ -131,8 +144,8 @@ class Analyzer {
         return this;
     }
 
-    scanInvokes() {
-        this.invokes = this.nodes
+    scanInvoked() {
+        this.invoked = this.nodes
             .filter(node => node.type === 'CallExpression' && node.callee.type === 'Identifier')
             .map(node => node.callee.name);
 
@@ -157,19 +170,20 @@ class Analyzer {
 
 
     createSubscriptions(){        
-        // this.declared.subscribe(value => {
-        
-        // });
+        this.declared.subscribe(value => {
+            this.feedTreeElement('declared', value);
+        });
 
-        // this.invokes.subscribe(value => {
-        
-        // });
+        this.invoked.subscribe(value => {
+            this.feedTreeElement('invoked', value);
+        });
 
-        // this.exported.subscribe(value => {
-        
-        // });
+        this.exported.subscribe(value => {
+            this.feedTreeElement('exported', value);
+        });
 
         this.imports.subscribe(value => {
+            this.feedTreeElement('imports', value);
             // this.deps.next(value);
         });
 
