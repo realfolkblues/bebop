@@ -31,7 +31,8 @@ function abc(filename) {
     const nodes = Rx.Observable
         .from([filename])
         .flatMap(file => Rx.Observable.bindNodeCallback(fs.readFile)(file, 'utf8'))
-        .flatMap(code => Rx.Observable.fromEventPattern(handler => esprima.parse(code, { sourceType: 'module' }, handler)));
+        .flatMap(code => Rx.Observable.fromEventPattern(handler => esprima.parse(code, { sourceType: 'module' }, handler)))
+        .share();
 
     const imports = nodes
         .filter(node => node.type === 'ImportDeclaration')
