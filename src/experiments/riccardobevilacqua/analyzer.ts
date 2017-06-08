@@ -90,8 +90,15 @@ class Analyzer {
             .createSubscriptions();
     }
 
-    createTreeSnapshot(filename) {
+    addTreeElement(filename) {
         let snapshot = this.tree.getValue();
+        const itemIndex = snapshot.findIndex(element => {
+            return element.file === filename;
+        });
+
+        if (itemIndex > -1) {
+            return;
+        }
 
         snapshot.push({
             file: filename
@@ -101,7 +108,7 @@ class Analyzer {
     }
 
     scanNodes(filename) {
-        this.createTreeSnapshot(filename);
+        this.addTreeElement(filename);
 
         this.nodes = Rx.Observable
             .from([filename])
