@@ -41,16 +41,16 @@
 
 import { readFile } from 'fs';
 import { resolve } from 'path';
-const esprima = require('esprima');
+import { parse } from 'esprima';
 import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
 
 class Analyzer {
     declared: Observable<string> = new Observable();
-    deps: Observable<string> = new Subject();
+    deps: Subject<string> = new Subject();
     dirPath: string;
     encoding: string;
     exported: Observable<string> = new Observable();
-    files: Observable<string> = new Observable();
+    
     imports: Observable<string> = new Observable();
     invoked: Observable<string> = new Observable();
     nodes: Observable<any> = new Observable();
@@ -64,11 +64,11 @@ class Analyzer {
     }
 
     createDepTree() {
-        this.files = this.deps
+        let files: Observable<string> = this.deps
             .startWith('index')
             .map(dep => resolve(this.dirPath, dep) + '.js');
 
-        this.files.subscribe(file => {
+        files.subscribe(file => {
             this.analyzeFile(file);
         });
 
@@ -82,7 +82,7 @@ class Analyzer {
         return this;
     }
 
-    analyzeFile(file) {
+    analyzeFile(file: string) {
         this.scanNodes(file)
             .scanImports()
             .scanDeclared()
@@ -91,7 +91,7 @@ class Analyzer {
             .createSubscriptions();
     }
 
-    addTreeElement(filename) {
+    addTreeElement(filename: string) {
         let snapshot = this.tree.getValue();
         const itemIndex = snapshot.findIndex(element => {
             return element.file === filename;
@@ -135,7 +135,7 @@ class Analyzer {
                 return  readFileAsObservable(file, this.encoding);
             }).flatMap(code => 
                 Observable.fromEventPattern(handler => 
-                    esprima.parse(code, { sourceType: 'module' }, handler)
+                    parse(code, { sourceType: 'module' }, handler)
                 )
             ).share();
         
@@ -190,7 +190,6 @@ class Analyzer {
 
         this.imports.subscribe(value => {
             this.feedTreeElement('imports', value);
-            // this.deps.next(value);
         });
 
         return this;
