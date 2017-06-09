@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
-        "outFile": "./dist/js/bundle.js",
+        "outDir": "dist/js",
+        "module": "commonjs",
         "target": "es2015"
     },
     "include": [
