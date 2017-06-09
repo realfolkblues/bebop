@@ -39,22 +39,22 @@
  *      - addX
  */
 
-const fs = require('fs');
-const path = require('path');
+import { readFile } from 'fs';
+import { resolve } from 'path';
 const esprima = require('esprima');
-const Rx = require('rxjs/Rx');
+import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
 
 class Analyzer {
-    declared: any = new Rx.Observable();
-    deps: any = new Rx.Subject();
+    declared: Observable<string> = new Observable();
+    deps: Observable<string> = new Subject();
     dirPath: string;
     encoding: string;
-    exported: any = new Rx.Observable();
-    files: any = new Rx.Observable();
-    imports: any = new Rx.Observable();
-    invoked: any = new Rx.Observable();
-    nodes: any = new Rx.Observable();
-    tree: any = new Rx.BehaviorSubject([]);
+    exported: Observable<string> = new Observable();
+    files: Observable<string> = new Observable();
+    imports: Observable<string> = new Observable();
+    invoked: Observable<string> = new Observable();
+    nodes: Observable<any> = new Observable();
+    tree: BehaviorSubject<any> = new BehaviorSubject([]);
 
     constructor(dirPath: string, encoding: string = 'utf8') {
         this.dirPath = dirPath;
@@ -66,7 +66,7 @@ class Analyzer {
     createDepTree() {
         this.files = this.deps
             .startWith('index')
-            .map(dep => path.resolve(this.dirPath, dep) + '.js');
+            .map(dep => resolve(this.dirPath, dep) + '.js');
 
         this.files.subscribe(file => {
             this.analyzeFile(file);
@@ -123,12 +123,18 @@ class Analyzer {
     scanNodes(filename) {
         this.addTreeElement(filename);
 
-        this.nodes = Rx.Observable
+        this.nodes = Observable
             .from([filename])
-            .flatMap(file => 
-                Rx.Observable.bindNodeCallback(fs.readFile)(file, this.encoding)
-            ).flatMap(code => 
-                Rx.Observable.fromEventPattern(handler => 
+            .flatMap(file =>{
+                const readFileAsObservable = Observable.bindNodeCallback((
+                    path: string,
+                    encoding: string,
+                    callback: (error: Error, buffer: Buffer) => void
+                ) => readFile(path, encoding, callback));
+
+                return  readFileAsObservable(file, this.encoding);
+            }).flatMap(code => 
+                Observable.fromEventPattern(handler => 
                     esprima.parse(code, { sourceType: 'module' }, handler)
                 )
             ).share();
