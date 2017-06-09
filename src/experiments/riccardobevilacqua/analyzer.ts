@@ -41,7 +41,7 @@
 
 import { readFile } from 'fs';
 import { resolve } from 'path';
-import { parse } from 'esprima';
+import { Node, parse } from 'esprima';
 import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
 
 class Analyzer {
@@ -53,7 +53,7 @@ class Analyzer {
     
     imports: Observable<string> = new Observable();
     invoked: Observable<string> = new Observable();
-    nodes: Observable<any> = new Observable();
+    nodes: Observable<Node> = new Observable();
     tree: BehaviorSubject<any> = new BehaviorSubject([]);
 
     constructor(dirPath: string, encoding: string = 'utf8') {
