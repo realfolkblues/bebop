@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "ilmente": "node ./src/experiments/ilmente/fn-01_2",
-    "analyze": "node ./dist/js/bundle.js"
+    "analyze": "node ./dist/js/analyzer.js"
   },
   "repository": {
     "type": "git",
