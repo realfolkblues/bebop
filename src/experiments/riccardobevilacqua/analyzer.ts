@@ -44,17 +44,24 @@ import { resolve } from 'path';
 import { Node, parse } from 'esprima';
 import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
 
+interface TreeItem {
+    file: string;
+    imports: string[];
+    declared: string[];
+    invoked: string[];
+    exported: string[];
+}
+
 class Analyzer {
     declared: Observable<string> = new Observable();
     deps: Subject<string> = new Subject();
     dirPath: string;
     encoding: string;
-    exported: Observable<string> = new Observable();
-    
+    exported: Observable<string> = new Observable();    
     imports: Observable<string> = new Observable();
     invoked: Observable<string> = new Observable();
     nodes: Observable<Node> = new Observable();
-    tree: BehaviorSubject<any> = new BehaviorSubject([]);
+    tree: BehaviorSubject<TreeItem[]> = new BehaviorSubject([]);
 
     constructor(dirPath: string, encoding: string = 'utf8') {
         this.dirPath = dirPath;
@@ -83,7 +90,8 @@ class Analyzer {
     }
 
     analyzeFile(file: string) {
-        this.scanNodes(file)
+        this.addTreeElement(file)
+            .scanNodes(file)
             .scanImports()
             .scanDeclared()
             .scanInvoked()
@@ -97,22 +105,22 @@ class Analyzer {
             return element.file === filename;
         });
 
-        if (itemIndex > -1) {
-            return;
+        if (itemIndex < 0) {
+            snapshot.push({
+                file: filename,
+                imports: [],
+                declared: [],
+                invoked: [],
+                exported: []
+            });
+
+            this.tree.next(snapshot);
         }
 
-        snapshot.push({
-            file: filename,
-            imports: [],
-            declared: [],
-            invoked: [],
-            exported: []
-        });
-
-        this.tree.next(snapshot);
+        return this;
     }
 
-    feedTreeElement(category, value) {
+    feedTreeElement(category: string, value: string) {
         let snapshot = this.tree.getValue();
 
         snapshot[snapshot.length - 1][category].push(value);
@@ -120,12 +128,10 @@ class Analyzer {
         this.tree.next(snapshot);
     }
 
-    scanNodes(filename) {
-        this.addTreeElement(filename);
-
+    scanNodes(filename: string) {
         this.nodes = Observable
             .from([filename])
-            .flatMap(file =>{
+            .flatMap(file => {
                 const readFileAsObservable = Observable.bindNodeCallback((
                     path: string,
                     encoding: string,
@@ -133,11 +139,15 @@ class Analyzer {
                 ) => readFile(path, encoding, callback));
 
                 return  readFileAsObservable(file, this.encoding);
-            }).flatMap(code => 
-                Observable.fromEventPattern(handler => 
+            }).flatMap(code => {
+                const codeAsObservable = Observable.fromEventPattern(handler => 
                     parse(code, { sourceType: 'module' }, handler)
-                )
-            ).share();
+                );
+
+                // codeAsObservable.subscribe(value => console.info(value));
+
+                return codeAsObservable;
+            }).share();
         
         return this;
     }
