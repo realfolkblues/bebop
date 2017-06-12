@@ -46,10 +46,15 @@ import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
 
 interface TreeItem {
     file: string;
-    imports: string[];
-    declared: string[];
-    invoked: string[];
-    exported: string[];
+    imports: CategoryItem[];
+    declared: CategoryItem[];
+    invoked: CategoryItem[];
+    exported: CategoryItem[];
+}
+
+interface CategoryItem {
+    name: string;
+    occurrences: number;
 }
 
 class Analyzer {
@@ -71,9 +76,9 @@ class Analyzer {
         });
 
         this.tree.subscribe({
-            next: (value) => {
+            next: (snapshot) => {
                 console.log('==== TREE:');
-                console.info(value);
+                snapshot.map(item => console.info(item));
             }
         });
 
@@ -158,7 +163,7 @@ class Analyzer {
         });
 
         if (itemIndex < 0) {
-            snapshot.push({
+            snapshot.push(<TreeItem>{
                 file: filename,
                 imports: [],
                 declared: [],
@@ -179,7 +184,16 @@ class Analyzer {
         });
 
         if (itemIndex > -1) {
-            snapshot[itemIndex][category].push(value);
+            const categoryIndex = snapshot[itemIndex][category].findIndex(categoryElement => categoryElement.name === value);
+
+            if (categoryIndex < 0) {
+                snapshot[itemIndex][category].push(<CategoryItem>{
+                    name: value,
+                    occurrences: 1
+                });
+            } else {
+                snapshot[itemIndex][category][categoryIndex].occurrences++;
+            }
 
             this.tree.next(snapshot);
         }
