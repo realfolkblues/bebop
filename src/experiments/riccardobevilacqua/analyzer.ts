@@ -53,14 +53,9 @@ interface TreeItem {
 }
 
 class Analyzer {
-    declared: Observable<string> = new Observable();
-    deps: Subject<string> = new Subject();
     dirPath: string;
-    encoding: string;
-    exported: Observable<string> = new Observable();    
-    imports: Observable<string> = new Observable();
-    invoked: Observable<string> = new Observable();
-    nodes: Observable<Node> = new Observable();
+    encoding: string;    
+    files: BehaviorSubject<string> = new BehaviorSubject('index');
     tree: BehaviorSubject<TreeItem[]> = new BehaviorSubject([]);
 
     constructor(dirPath: string, encoding: string = 'utf8') {
@@ -71,12 +66,8 @@ class Analyzer {
     }
 
     createDepTree() {
-        let files: Observable<string> = this.deps
-            .startWith('index')
-            .map(dep => resolve(this.dirPath, dep) + '.js');
-
-        files.subscribe(file => {
-            this.analyzeFile(file);
+        this.files.subscribe(filename => {
+            this.analyzeFile(resolve(this.dirPath, filename) + '.js');
         });
 
         this.tree.subscribe({
@@ -89,17 +80,78 @@ class Analyzer {
         return this;
     }
 
-    analyzeFile(file: string) {
-        this.addTreeElement(file)
-            .scanNodes(file)
-            .scanImports()
-            .scanDeclared()
-            .scanInvoked()
-            .scanExported()
-            .createSubscriptions();
+    analyzeFile(filename: string): void {
+        this.addTreeElement(filename);
+        this.scanNodes(filename);
     }
 
-    addTreeElement(filename: string) {
+    scanNodes(filename: string) {
+        const nodes = Observable
+            .from([filename])
+            .flatMap(file => {
+                const readFileAsObservable = Observable.bindNodeCallback((
+                    path: string,
+                    encoding: string,
+                    callback: (error: Error, buffer: Buffer) => void
+                ) => readFile(path, encoding, callback));
+
+                return  readFileAsObservable(file, this.encoding);
+            }).flatMap(code => {
+                const codeAsObservable = Observable.fromEventPattern(handler => 
+                    parse(code, { sourceType: 'module' }, handler)
+                );
+
+                return codeAsObservable;
+            }).share();
+        
+        const imports = this.scanImports(nodes);
+        const declared = this.scanDeclared(nodes);
+        const invoked = this.scanInvoked(nodes);
+        const exported = this.scanExported(nodes);
+
+        imports.subscribe(value => {
+            this.feedTreeElement(filename, 'imports', value);
+            this.files.next(value);
+        });
+
+        declared.subscribe(value => {
+            this.feedTreeElement(filename, 'declared', value);
+        });
+
+        invoked.subscribe(value => {
+            this.feedTreeElement(filename, 'invoked', value);
+        });
+
+        exported.subscribe(value => {
+            this.feedTreeElement(filename, 'exported', value);
+        });
+    }
+
+    scanImports(nodes: Observable<Node>): Observable<string>  {
+        return nodes
+            .filter(node => node.type === 'ImportDeclaration')
+            .map(node => node.source.value);
+    }
+
+    scanInvoked(nodes: Observable<Node>): Observable<string> {
+        return nodes
+            .filter(node => node.type === 'CallExpression' && node.callee.type === 'Identifier')
+            .map(node => node.callee.name);
+    }
+
+    scanDeclared(nodes: Observable<Node>): Observable<string> {
+        return nodes
+            .filter(node => node.type === 'FunctionDeclaration')
+            .map(node => node.id.name);
+    }
+
+    scanExported(nodes: Observable<Node>): Observable<string> {
+        return nodes
+            .filter(node => node.type === 'ExportNamedDeclaration')
+            .map(node => node.declaration.id.name);
+    }
+
+    addTreeElement(filename: string): TreeItem[] {
         let snapshot = this.tree.getValue();
         const itemIndex = snapshot.findIndex(element => {
             return element.file === filename;
@@ -117,92 +169,22 @@ class Analyzer {
             this.tree.next(snapshot);
         }
 
-        return this;
+        return snapshot;
     }
 
-    feedTreeElement(category: string, value: string) {
+    feedTreeElement(filename: string, category: string, value: string): TreeItem[] {
         let snapshot = this.tree.getValue();
-
-        snapshot[snapshot.length - 1][category].push(value);
-
-        this.tree.next(snapshot);
-    }
-
-    scanNodes(filename: string) {
-        this.nodes = Observable
-            .from([filename])
-            .flatMap(file => {
-                const readFileAsObservable = Observable.bindNodeCallback((
-                    path: string,
-                    encoding: string,
-                    callback: (error: Error, buffer: Buffer) => void
-                ) => readFile(path, encoding, callback));
-
-                return  readFileAsObservable(file, this.encoding);
-            }).flatMap(code => {
-                const codeAsObservable = Observable.fromEventPattern(handler => 
-                    parse(code, { sourceType: 'module' }, handler)
-                );
-
-                // codeAsObservable.subscribe(value => console.info(value));
-
-                return codeAsObservable;
-            }).share();
-        
-        return this;
-    }
-
-    scanImports() {
-        this.imports = this.nodes
-            .filter(node => node.type === 'ImportDeclaration')
-            .map(node => node.source.value);
-
-        return this;
-    }
-
-    scanInvoked() {
-        this.invoked = this.nodes
-            .filter(node => node.type === 'CallExpression' && node.callee.type === 'Identifier')
-            .map(node => node.callee.name);
-
-        return this;
-    }
-
-    scanDeclared() {
-        this.declared = this.nodes
-            .filter(node => node.type === 'FunctionDeclaration')
-            .map(node => node.id.name);
-
-        return this;
-    }
-
-    scanExported() {
-        this.exported = this.nodes
-            .filter(node => node.type === 'ExportNamedDeclaration')
-            .map(node => node.declaration.id.name);
-
-        return this;
-    }
-
-
-    createSubscriptions(){        
-        this.declared.subscribe(value => {
-            this.feedTreeElement('declared', value);
+        const itemIndex = snapshot.findIndex(element => {
+            return element.file === filename;
         });
 
-        this.invoked.subscribe(value => {
-            this.feedTreeElement('invoked', value);
-        });
+        if (itemIndex > -1) {
+            snapshot[itemIndex][category].push(value);
 
-        this.exported.subscribe(value => {
-            this.feedTreeElement('exported', value);
-        });
+            this.tree.next(snapshot);
+        }
 
-        this.imports.subscribe(value => {
-            this.feedTreeElement('imports', value);
-        });
-
-        return this;
+        return snapshot;
     }
 }
 
