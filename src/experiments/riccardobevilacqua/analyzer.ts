@@ -177,14 +177,16 @@ class Analyzer {
         return snapshot;
     }
 
-    feedTreeElement(filename: string, category: string, value: string): TreeItem[] {
-        let snapshot = this.tree.getValue();
-        const itemIndex = snapshot.findIndex(element => {
+    feedTreeElement(filename: string, category: 'imports' | 'declared' | 'invoked' | 'exported', value: string): TreeItem[] {
+        let snapshot: TreeItem[] = this.tree.getValue();
+        const itemIndex: number = snapshot.findIndex(element => {
             return element.file === filename;
         });
 
         if (itemIndex > -1) {
-            const categoryIndex = snapshot[itemIndex][category].findIndex(categoryElement => categoryElement.name === value);
+            const categoryIndex = snapshot[itemIndex][category].findIndex((categoryElement: CategoryItem) => {
+                return categoryElement.name === value
+            });
 
             if (categoryIndex < 0) {
                 snapshot[itemIndex][category].push(<CategoryItem>{
