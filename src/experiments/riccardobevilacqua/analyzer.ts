@@ -24,16 +24,21 @@ import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
 
 interface TreeItem {
     file: string;
-    imports: string[];
-    declared: string[];
-    invoked: string[];
-    exported: string[];
+    imports: CategoryItem[];
+    declared: CategoryItem[];
+    invoked: CategoryItem[];
+    exported: CategoryItem[];
+}
+
+interface CategoryItem {
+    name: string;
+    occurrences: number;
 }
 
 class Analyzer {
     dirPath: string;
-    encoding: string;
-    files: BehaviorSubject<string> = new BehaviorSubject<string>('index');
+    encoding: string;    
+    files: BehaviorSubject<string> = new BehaviorSubject('index');
     tree: BehaviorSubject<TreeItem[]> = new BehaviorSubject([]);
 
     constructor(dirPath: string, encoding: string = 'utf8') {
@@ -43,24 +48,27 @@ class Analyzer {
         this.createDepTree();
     }
 
-    createDepTree(): void {        
-        this.files.subscribe(file => {
-            const filename = resolve(this.dirPath, file) + '.js';
-            console.log('FILE: ' + filename);
-            this.analyzeFile(filename);
+    createDepTree() {
+        this.files.subscribe(filename => {
+            this.analyzeFile(resolve(this.dirPath, filename) + '.js');
         });
 
         this.tree.subscribe({
-            next: (value) => {
+            next: (snapshot) => {
                 console.log('==== TREE:');
-                console.info(value);
+                snapshot.map(item => console.info(item));
             }
         });
+
+        return this;
     }
 
     analyzeFile(filename: string): void {
         this.addTreeElement(filename);
+        this.scanNodes(filename);
+    }
 
+    scanNodes(filename: string) {
         const nodes = Observable
             .from([filename])
             .flatMap(file => {
@@ -102,7 +110,7 @@ class Analyzer {
         });
     }
 
-    scanImports(nodes: Observable<Node>): Observable<string> {
+    scanImports(nodes: Observable<Node>): Observable<string>  {
         return nodes
             .filter(node => node.type === 'ImportDeclaration')
             .map(node => node.source.value);
@@ -147,14 +155,26 @@ class Analyzer {
         return snapshot;
     }
 
-    feedTreeElement(filename: string, category: string, value: string): TreeItem[] {
-        let snapshot = this.tree.getValue();
-        const itemIndex = snapshot.findIndex(element => {
+    feedTreeElement(filename: string, category: 'imports' | 'declared' | 'invoked' | 'exported', value: string): TreeItem[] {
+        let snapshot: TreeItem[] = this.tree.getValue();
+        const itemIndex: number = snapshot.findIndex(element => {
             return element.file === filename;
         });
 
         if (itemIndex > -1) {
-            snapshot[itemIndex][category].push(value);
+            const categoryIndex = snapshot[itemIndex][category].findIndex((categoryElement: CategoryItem) => {
+                return categoryElement.name === value
+            });
+
+            if (categoryIndex < 0) {
+                snapshot[itemIndex][category].push(<CategoryItem>{
+                    name: value,
+                    occurrences: 1
+                });
+            } else {
+                snapshot[itemIndex][category][categoryIndex].occurrences++;
+            }
+
             this.tree.next(snapshot);
         }
 
