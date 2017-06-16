@@ -33,43 +33,38 @@ class Analyzer {
         this.dirPath = dirPath;
         this.encoding = encoding;
 
-        this.createDepTree();
-    }
-
-    createDepTree() {
         this.files.subscribe(filename => {
-            this.analyzeFile(resolve(this.dirPath, filename) + '.js');
+            const nodes = this.getAstFromFile(resolve(this.dirPath, filename) + '.js');
         });
-
-        return this;
     }
 
-    analyzeFile(filename: string) {
+    getAstFromFile(filename: string): Observable<babelTypes.File> {
         const readFileAsObservable = Observable.bindNodeCallback((
             path: string,
             encoding: string,
             callback: (error: Error, buffer: Buffer) => void
         ) => readFile(path, encoding, callback));
 
-        const nodes = readFileAsObservable(filename, this.encoding)
-            .flatMap(codeBuffer => {
-                const codeAsObservable = Observable.bindNodeCallback((
-                    code: Buffer,
+        const tree = readFileAsObservable(filename, this.encoding)
+            .flatMap(buffer => {
+                const astAsObservable = Observable.bindNodeCallback((
+                    codeBuffer: Buffer,
                     callback: (error: Error, file: babelTypes.File) => void
                 ) => {
-                        const decoder = new StringDecoder(this.encoding);
-                        
-                        return babylon.parse(decoder.write(codeBuffer), {
-                            allowImportExportEverywhere: true,
-                            sourceFilename: filename,
-                            sourceType: 'module'
-                        });
-                    }
-                );
+                    const decoder = new StringDecoder(this.encoding);
+                    const ast = babylon.parse(decoder.write(codeBuffer), {
+                        allowImportExportEverywhere: true,
+                        sourceFilename: filename,
+                        sourceType: 'module'
+                    });
 
-                return codeAsObservable(codeBuffer);
-            }).share();
-        
+                    return ast;
+                });
+
+                return astAsObservable(buffer);
+            });
+
+        return tree;        
     }
 }
 
