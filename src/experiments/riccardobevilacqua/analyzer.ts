@@ -44,14 +44,21 @@ class Analyzer {
             acornAst.subscribe({
                 next: (value: estree.Program) => {
                     console.log('==== ACORN AST');
-                }
+                },
+                error: (error: Error) => {
+                    console.error(error);
+                },
+                complete: () => console.log('Acorn AST Complete!')
             })
 
             babylonAst.subscribe({
                 next: (value: babelTypes.File) => {
                     console.log('==== BABYLON AST');
                 },
-                complete: () => console.log('Complete!')
+                error: (error: Error) => {
+                    console.error(error);
+                },
+                complete: () => console.log('Babylon AST Complete!')
             })
         });
     }
