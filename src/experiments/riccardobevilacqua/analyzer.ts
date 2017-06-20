@@ -17,12 +17,11 @@
  * 
  */
 
-import { readFile } from 'fs';
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { StringDecoder } from 'string_decoder';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
-import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
+import { Observable, BehaviorSubject } from 'rxjs/Rx';
 
 class Analyzer {
     dirPath: string;
@@ -34,42 +33,31 @@ class Analyzer {
         this.encoding = encoding;
 
         this.files.subscribe(filename => {
-            const fileFullPath = resolve(this.dirPath, filename) + '.js';
-            const babylonAst = this.getBabylonAstFromFile(fileFullPath);
+            const ast = this.getAstFromFile(resolve(this.dirPath, filename) + '.js');
 
-            babylonAst.subscribe({
+            ast.subscribe({
                 next: (value) => {
-                    console.log('==== BABYLON AST');
+                    console.log('==== AST...');
                     console.log(value);
                 },
                 error: (error) => {
                     console.error(error);
                 },
-                complete: () => console.log('==== Babylon AST Complete!')
+                complete: () => console.log('==== ...Completed')
             });
         });
     }
 
-    getBabylonAstFromFile(filename: string): Observable<any> {
-        const readFileAsObservable = Observable.bindNodeCallback((
-            path: string,
-            encoding: string,
-            callback: (error: Error, buffer: Buffer) => void
-        ) => readFile(path, encoding, callback));
-
-        const tree = readFileAsObservable(filename, this.encoding)
-            .flatMap(buffer => {                
-                const decoder = new StringDecoder(this.encoding);
-                const ast = babylon.parse(decoder.write(buffer), {
+    getAstFromFile(filename: string): Observable<babelTypes.File> {
+        return Observable
+            .of(readFileSync(filename, this.encoding))
+            .map(code =>                 
+                babylon.parse(code, {
                     allowImportExportEverywhere: true,
                     sourceFilename: filename,
                     sourceType: 'module'
-                });
-
-                return Observable.of(ast);
-            });
-
-        return tree;        
+                })
+            );    
     }
 }
 
