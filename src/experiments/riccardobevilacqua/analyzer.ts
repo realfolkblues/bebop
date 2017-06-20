@@ -20,9 +20,6 @@
 import { readFile } from 'fs';
 import { resolve } from 'path';
 import { StringDecoder } from 'string_decoder';
-import * as estree from '@types/estree';
-import * as acorn from 'acorn';
-import * as acornTypes from '@types/acorn';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
 import { Observable, Subject, BehaviorSubject } from 'rxjs/Rx';
@@ -38,32 +35,22 @@ class Analyzer {
 
         this.files.subscribe(filename => {
             const fileFullPath = resolve(this.dirPath, filename) + '.js';
-            const acornAst = this.getAcornAstFromFile(fileFullPath);
             const babylonAst = this.getBabylonAstFromFile(fileFullPath);
 
-            acornAst.subscribe({
-                next: (value: estree.Program) => {
-                    console.log('==== ACORN AST');
-                },
-                error: (error: Error) => {
-                    console.error(error);
-                },
-                complete: () => console.log('Acorn AST Complete!')
-            })
-
             babylonAst.subscribe({
-                next: (value: babelTypes.File) => {
+                next: (value) => {
                     console.log('==== BABYLON AST');
+                    console.log(value);
                 },
-                error: (error: Error) => {
+                error: (error) => {
                     console.error(error);
                 },
-                complete: () => console.log('Babylon AST Complete!')
-            })
+                complete: () => console.log('==== Babylon AST Complete!')
+            });
         });
     }
 
-    getAcornAstFromFile(filename: string): Observable<estree.Program> {
+    getBabylonAstFromFile(filename: string): Observable<any> {
         const readFileAsObservable = Observable.bindNodeCallback((
             path: string,
             encoding: string,
@@ -71,51 +58,15 @@ class Analyzer {
         ) => readFile(path, encoding, callback));
 
         const tree = readFileAsObservable(filename, this.encoding)
-            .flatMap(buffer => {
-                const astAsObservable = Observable.bindNodeCallback((
-                    codeBuffer: Buffer,
-                    callback: (error: Error, tree: estree.Program) => void
-                ) => {
-                    const decoder = new StringDecoder(this.encoding);
-                    const ast = acorn.parse(decoder.write(codeBuffer), {
-                        allowImportExportEverywhere: true,
-                        sourceFile: filename,
-                        sourceType: 'module'
-                    });
-
-                    return ast;
+            .flatMap(buffer => {                
+                const decoder = new StringDecoder(this.encoding);
+                const ast = babylon.parse(decoder.write(buffer), {
+                    allowImportExportEverywhere: true,
+                    sourceFilename: filename,
+                    sourceType: 'module'
                 });
 
-                return astAsObservable(buffer);
-            });
-
-        return tree;
-    }
-
-    getBabylonAstFromFile(filename: string): Observable<babelTypes.File> {
-        const readFileAsObservable = Observable.bindNodeCallback((
-            path: string,
-            encoding: string,
-            callback: (error: Error, buffer: Buffer) => void
-        ) => readFile(path, encoding, callback));
-
-        const tree = readFileAsObservable(filename, this.encoding)
-            .flatMap(buffer => {
-                const astAsObservable = Observable.bindNodeCallback((
-                    codeBuffer: Buffer,
-                    callback: (error: Error, file: babelTypes.File) => void
-                ) => {
-                    const decoder = new StringDecoder(this.encoding);
-                    const ast = babylon.parse(decoder.write(codeBuffer), {
-                        allowImportExportEverywhere: true,
-                        sourceFilename: filename,
-                        sourceType: 'module'
-                    });
-
-                    return ast;
-                });
-
-                return astAsObservable(buffer);
+                return Observable.of(ast);
             });
 
         return tree;        
