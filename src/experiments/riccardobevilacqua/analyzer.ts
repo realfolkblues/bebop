@@ -45,14 +45,27 @@ class Analyzer {
                     next: (value) => {
                         console.log(`==== AST for [${filename}]...`);
                         console.log(value);
+                        this.scanImports(value);
                     },
                     error: (error) => {
                         console.error(error);
                     },
-                    complete: () => console.log('==== ...Completed')
+                    complete: () => console.log('==== ...Completed for [${filename}]')
                 });
             },
             complete: () => console.log('==== All files have been processed')
+        });
+    }
+
+    scanImports(ast: babelTypes.File): void {
+        const files = this.files;
+        
+        traverse(ast, {
+            enter(path) {
+                if (path.isImportDeclaration()) {
+                    files.next(path.node.source.value);
+                }
+            }
         });
     }
 
