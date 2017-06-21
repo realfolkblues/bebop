@@ -21,6 +21,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
+import { traverse } from 'babel-traverse';
 import { Observable, BehaviorSubject } from 'rxjs/Rx';
 
 class Analyzer {
@@ -32,6 +33,10 @@ class Analyzer {
         this.dirPath = dirPath;
         this.encoding = encoding;
 
+        this.scanFiles();
+    }
+
+    scanFiles(): void {
         this.files.subscribe({
             next: filename => {
                 const ast = this.getAstFromFile(resolve(this.dirPath, filename) + '.js');
