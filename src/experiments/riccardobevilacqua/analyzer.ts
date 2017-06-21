@@ -21,7 +21,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
-import { traverse } from 'babel-traverse';
+import traverse from 'babel-traverse';
 import { Observable, BehaviorSubject } from 'rxjs/Rx';
 
 class Analyzer {
