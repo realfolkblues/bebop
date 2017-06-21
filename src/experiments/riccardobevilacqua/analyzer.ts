@@ -32,19 +32,22 @@ class Analyzer {
         this.dirPath = dirPath;
         this.encoding = encoding;
 
-        this.files.subscribe(filename => {
-            const ast = this.getAstFromFile(resolve(this.dirPath, filename) + '.js');
+        this.files.subscribe({
+            next: filename => {
+                const ast = this.getAstFromFile(resolve(this.dirPath, filename) + '.js');
 
-            ast.subscribe({
-                next: (value) => {
-                    console.log('==== AST...');
-                    console.log(value);
-                },
-                error: (error) => {
-                    console.error(error);
-                },
-                complete: () => console.log('==== ...Completed')
-            });
+                ast.subscribe({
+                    next: (value) => {
+                        console.log(`==== AST for [${filename}]...`);
+                        console.log(value);
+                    },
+                    error: (error) => {
+                        console.error(error);
+                    },
+                    complete: () => console.log('==== ...Completed')
+                });
+            },
+            complete: () => console.log('==== All files have been processed')
         });
     }
 
