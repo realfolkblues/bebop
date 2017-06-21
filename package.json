@@ -30,8 +30,6 @@
   "homepage": "https://github.com/ilmente/tree-shaking-study#readme",
   "dependencies": {
     "@types/acorn": "^4.0.2",
-    "@types/estree": "0.0.35",
-    "acorn": "^5.0.3",
     "babel-types": "^6.25.0",
     "babylon": "^6.17.3",
     "rxjs": "^5.4.0"
