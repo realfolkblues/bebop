@@ -29,7 +29,6 @@
   },
   "homepage": "https://github.com/ilmente/tree-shaking-study#readme",
   "dependencies": {
-    "@types/acorn": "^4.0.2",
     "babel-traverse": "^6.25.0",
     "babel-types": "^6.25.0",
     "babylon": "^6.17.3",
