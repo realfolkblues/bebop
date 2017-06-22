@@ -4,8 +4,9 @@
   "description": "Javascript ES2015 tree shaking study",
   "main": "index.js",
   "scripts": {
+    "tsc": "./node_modules/typescript/bin/tsc",
     "analyze": "node ./dist/js/analyzer.js",
-    "ilmente": "node ./src/experiments/ilmente/test3"
+    "ilmente": "./node_modules/typescript/bin/tsc && node ./dist/js/ilmente/test3"
   },
   "repository": {
     "type": "git",
@@ -30,9 +31,11 @@
   "homepage": "https://github.com/ilmente/tree-shaking-study#readme",
   "dependencies": {
     "esprima": "^3.1.3",
+    "jscodeshift": "^0.3.31",
     "rxjs": "^5.4.0"
   },
   "devDependencies": {
-    "@types/node": "^7.0.22"
+    "@types/node": "^7.0.22",
+    "typescript": "^2.3.4"
   }
 }
