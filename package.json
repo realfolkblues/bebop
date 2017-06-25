@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "tsc": "./node_modules/typescript/bin/tsc",
-    "analyze": "node ./dist/js/analyzer.js",
+    "analyze": "node ./dist/js/index.js",
     "ilmente": "./node_modules/typescript/bin/tsc && node ./dist/js/ilmente/test3"
   },
   "repository": {
