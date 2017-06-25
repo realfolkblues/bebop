@@ -28,7 +28,12 @@ export default class Crawler {
 
         const astStream = this.filesSubject
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
-            .map((fullPath: string) => ({ code: readFileSync(fullPath, this.encoding), fullPath }))
+            .map((fullPath: string) => (
+                <ICrawlerModule>{
+                    code: readFileSync(fullPath, this.encoding),
+                    fullPath
+                }
+            ))
             .map((module: ICrawlerModule) => this.getAST(module))
             .share();
 
@@ -61,7 +66,7 @@ export default class Crawler {
     }
 
     getAST(module: ICrawlerModule) { 
-        return babylon.parse(module.code, {
+        return babylon.parse(module.code, <babylon.BabylonOptions>{
             allowImportExportEverywhere: true,
             sourceFilename: module.fullPath,
             sourceType: 'module'
