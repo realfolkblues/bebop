@@ -37,23 +37,50 @@ export default class Crawler {
             .map((module: ICrawlerModule) => this.getAST(module))
             .share();
 
-        astStream.subscribe(ast => {
-            jscodeshift(ast)
-                .find(jscodeshift.ImportDeclaration)
-                .forEach(function (node) {
-                    const dependency: IResolverModule = {
-                        id: node.value.source.value,
-                        context: node.value.loc.filename,
-                        isFileContext: true
-                    };
+        astStream.subscribe({
+            next: (ast: babelTypes.File) => {
+                const astCollection: jscodeshift.Collection = jscodeshift(ast);
+                const invokedFn: Subject<string> = new Subject<string>();
 
-                    self.filesSubject.next(dependency);
+                astCollection
+                    .find(jscodeshift.ImportDeclaration)
+                    .forEach((nodePath) => {
+                        const dependency: IResolverModule = {
+                            id: nodePath.value.source.value,
+                            context: nodePath.value.loc.filename,
+                            isFileContext: true
+                        };
+
+                        self.filesSubject.next(dependency);
+                    });
+
+                astCollection
+                    .find(jscodeshift.CallExpression, {
+                        callee: {
+                            type: 'Identifier'
+                        }
+                    })
+                    .forEach((nodePath) => {
+                        console.info(nodePath.value.callee.name);
+                        invokedFn.next(nodePath.value.callee.name);
+                    });
+
+                invokedFn.subscribe({
+                    next: (value) => {
+                        console.log('Invoked!');
+                    },
+                    error: (err: Error) => {
+                        console.error(err);
+                    }
                 });
 
-        }, err => {
-            console.log(err);
-        }, () => {
-            console.log('end');
+            }, 
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('end');
+            }
         });
 
         return astStream;
