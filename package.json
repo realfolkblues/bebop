@@ -32,12 +32,13 @@
   "dependencies": {
     "babel-types": "^6.25.0",
     "babylon": "^6.17.3",
-    "jscodeshift": "^0.3.31",
+    "jscodeshift": "^0.3.32",
     "rxjs": "^5.4.0"
   },
   "devDependencies": {
     "@types/babylon": "^6.16.1",
     "@types/node": "^7.0.22",
+    "iconv-lite": "^0.4.18",
     "typescript": "^2.3.4"
   }
 }
