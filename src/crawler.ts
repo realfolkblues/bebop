@@ -23,10 +23,10 @@ export default class Crawler {
         this.filesSubject = new Subject<IResolverModule>();
     }
 
-    getObeservable() { 
+    getASTStream() { 
         const self = this;
 
-        const astStream = this.filesSubject
+        const astStream: Observable<babelTypes.File> = this.filesSubject
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string) => (
                 <ICrawlerModule>{
