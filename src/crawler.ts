@@ -40,7 +40,7 @@ export default class Crawler {
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 const astCollection: any = jscodeshift(ast);
-                const invokedFn: Subject<any> = new Subject<any>();
+                const invokedFn: Subject<string> = new Subject<string>();
 
                 invokedFn.subscribe({
                     next: (value) => {
