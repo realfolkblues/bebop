@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { Observable, Subject} from 'rxjs';
+import { Observable, Subject } from 'rxjs/Rx';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
 import * as jscodeshift from 'jscodeshift';
@@ -39,8 +39,17 @@ export default class Crawler {
 
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
-                const astCollection: jscodeshift.Collection = jscodeshift(ast);
-                const invokedFn: Subject<string> = new Subject<string>();
+                const astCollection: any = jscodeshift(ast);
+                const invokedFn: Subject<any> = new Subject<any>();
+
+                invokedFn.subscribe({
+                    next: (value) => {
+                        console.log('Invoked [' + value + ']');
+                    },
+                    error: (err: Error) => {
+                        console.error(err);
+                    }
+                });
 
                 astCollection
                     .find(jscodeshift.ImportDeclaration)
@@ -61,19 +70,8 @@ export default class Crawler {
                         }
                     })
                     .forEach((nodePath) => {
-                        console.info(nodePath.value.callee.name);
                         invokedFn.next(nodePath.value.callee.name);
                     });
-
-                invokedFn.subscribe({
-                    next: (value) => {
-                        console.log('Invoked!');
-                    },
-                    error: (err: Error) => {
-                        console.error(err);
-                    }
-                });
-
             }, 
             error: (err: Error) => {
                 console.error(err);
