@@ -27,7 +27,21 @@ export default class Scanner {
 
         invokedFn.subscribe({
             next: (value) => {
-                console.info(value);
+                astCollection
+                    .find(jscodeshift.FunctionDeclaration, {
+                        id: {
+                            name: value
+                        }
+                    })
+                    .forEach(nodePath => {
+                        if (parseInt(nodePath['references']) > -1) {
+                            nodePath.references++;
+                        } else {
+                            nodePath['references'] = 1;
+                        }
+
+                        console.info(nodePath);
+                    });
             },
             error: (err: Error) => {
                 console.error(err);
@@ -37,16 +51,15 @@ export default class Scanner {
             }
         });
 
-        const invokedFnCollection = 
-            astCollection.find(jscodeshift.CallExpression, {
+        const invokedFnCollection: jscodeshift.Collection = astCollection
+            .find(jscodeshift.CallExpression, {
                 callee: {
                     type: 'Identifier'
                 }
             });
 
-        invokedFnCollection.forEach((nodePath) => {
-            nodePath['customProp'] = 1;
-            invokedFn.next(nodePath);
+        invokedFnCollection.forEach(nodePath => {
+            invokedFn.next(nodePath.value.callee.name); 
         });
 
         return astCollection;
