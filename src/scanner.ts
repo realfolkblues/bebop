@@ -21,26 +21,34 @@ export default class Scanner {
         });
     }
 
-    scanInvokedFn(ast: babelTypes.File): any {
-        const invokedFn: Subject<string> = new Subject<string>();
+    scanInvokedFn(ast: babelTypes.File): jscodeshift.Collection {
+        const astCollection: jscodeshift.Collection = jscodeshift(ast);
+        const invokedFn: Subject<jscodeshift.CallExpression> = new Subject<jscodeshift.CallExpression>();
 
         invokedFn.subscribe({
             next: (value) => {
-                console.log('Invoked [' + value + ']');
+                console.info(value);
             },
             error: (err: Error) => {
                 console.error(err);
+            },
+            complete: () => {
+                console.log('Invoked functions stream completed');
             }
         });
 
-        jscodeshift(ast)
-            .find(jscodeshift.CallExpression, {
+        const invokedFnCollection = 
+            astCollection.find(jscodeshift.CallExpression, {
                 callee: {
                     type: 'Identifier'
                 }
-            })
-            .forEach((nodePath) => {
-                invokedFn.next(nodePath.value.callee.name);
             });
+
+        invokedFnCollection.forEach((nodePath) => {
+            nodePath['customProp'] = 1;
+            invokedFn.next(nodePath);
+        });
+
+        return astCollection;
     }
 }
