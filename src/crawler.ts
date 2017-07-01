@@ -39,19 +39,7 @@ export default class Crawler {
 
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
-                const astCollection: any = jscodeshift(ast);
-                const invokedFn: Subject<string> = new Subject<string>();
-
-                invokedFn.subscribe({
-                    next: (value) => {
-                        console.log('Invoked [' + value + ']');
-                    },
-                    error: (err: Error) => {
-                        console.error(err);
-                    }
-                });
-
-                astCollection
+                jscodeshift(ast)
                     .find(jscodeshift.ImportDeclaration)
                     .forEach((nodePath) => {
                         const dependency: IResolverModule = {
@@ -61,16 +49,6 @@ export default class Crawler {
                         };
 
                         self.filesSubject.next(dependency);
-                    });
-
-                astCollection
-                    .find(jscodeshift.CallExpression, {
-                        callee: {
-                            type: 'Identifier'
-                        }
-                    })
-                    .forEach((nodePath) => {
-                        invokedFn.next(nodePath.value.callee.name);
                     });
             }, 
             error: (err: Error) => {
