@@ -10,7 +10,8 @@ export default class Scanner {
     subscribeAstStream(astStream: Observable<babelTypes.File>): void {
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
-                this.scanInvokedFn(ast);
+                const astCollectionMod: jscodeshift.Collection = this.scanInvokedFn(jscodeshift(ast));
+                this.convertToSource(astCollectionMod);
             }, 
             error: (err: Error) => {
                 console.error(err);
@@ -21,8 +22,7 @@ export default class Scanner {
         });
     }
 
-    scanInvokedFn(ast: babelTypes.File): jscodeshift.Collection {
-        const astCollection: jscodeshift.Collection = jscodeshift(ast);
+    scanInvokedFn(astCollection: jscodeshift.Collection): jscodeshift.Collection {
         const invokedFn: Subject<jscodeshift.CallExpression> = new Subject<jscodeshift.CallExpression>();
 
         invokedFn.subscribe({
@@ -39,8 +39,6 @@ export default class Scanner {
                         } else {
                             nodePath['references'] = 1;
                         }
-
-                        console.info(nodePath);
                     });
             },
             error: (err: Error) => {
@@ -63,5 +61,10 @@ export default class Scanner {
         });
 
         return astCollection;
+    }
+
+    convertToSource(astCollection: jscodeshift.Collection): void {
+        console.log('=====================');
+        console.info(astCollection.toSource());
     }
 }
