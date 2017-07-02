@@ -3,22 +3,27 @@ import { Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
 
 export default class Scanner {
+    astStream: Observable<babelTypes.File>
+    astStreamModded: Subject<babelTypes.File> = new Subject<babelTypes.File>();
+
     constructor(astStream: Observable<babelTypes.File>) { 
-        this.subscribeAstStream(astStream);
+        this.astStream = astStream;
+        this.scanASTStream();
     }
 
-    subscribeAstStream(astStream: Observable<babelTypes.File>): void {
-        astStream.subscribe({
+    scanASTStream(): void {
+        this.astStream.subscribe({
             next: (ast: babelTypes.File) => {
-                const astCollectionMod: jscodeshift.Collection = this.scanInvokedFn(jscodeshift(ast));
-                const astCollectionClean: jscodeshift.Collection = this.epurateDeclaredFn(astCollectionMod);
-                this.convertToSource(astCollectionClean);
+                const astCollectionOriginal: jscodeshift.Collection = jscodeshift(ast);
+                const astModded = this.scanInvokedFn(astCollectionOriginal).getAST();
+
+                this.astStreamModded.next(astModded);
             }, 
             error: (err: Error) => {
                 console.error(err);
             },
             complete: () => {
-                console.log('end');
+                console.log('Scanning completed');
             }
         });
     }
@@ -68,22 +73,7 @@ export default class Scanner {
             });
     }
 
-    epurateDeclaredFn(astCollection: jscodeshift.Collection): jscodeshift.Collection {
-        return astCollection
-            .find(jscodeshift.FunctionDeclaration)
-            .forEach(nodePath => {
-                if (!nodePath.references) {
-                    if (nodePath.parent.value.type === 'ExportNamedDeclaration') {
-                        nodePath.parent.replace();
-                    } else {
-                        nodePath.replace();
-                    }
-                }
-            });
-    }
-
-    convertToSource(astCollection: jscodeshift.Collection): void {
-        console.log('=====================');
-        console.info(astCollection.toSource());
+    getASTStream() {
+        return this.astStreamModded;
     }
 }
