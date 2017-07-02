@@ -73,7 +73,11 @@ export default class Scanner {
             .find(jscodeshift.FunctionDeclaration)
             .forEach(nodePath => {
                 if (!nodePath.references) {
-                    nodePath.replace();
+                    if (nodePath.parent.value.type === 'ExportNamedDeclaration') {
+                        nodePath.parent.replace();
+                    } else {
+                        nodePath.replace();
+                    }
                 }
             });
     }
