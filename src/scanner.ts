@@ -11,7 +11,8 @@ export default class Scanner {
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 const astCollectionMod: jscodeshift.Collection = this.scanInvokedFn(jscodeshift(ast));
-                this.convertToSource(astCollectionMod);
+                const astCollectionClean: jscodeshift.Collection = this.epurateDeclaredFn(astCollectionMod);
+                this.convertToSource(astCollectionClean);
             }, 
             error: (err: Error) => {
                 console.error(err);
@@ -49,18 +50,32 @@ export default class Scanner {
             }
         });
 
-        const invokedFnCollection: jscodeshift.Collection = astCollection
-            .find(jscodeshift.CallExpression, {
-                callee: {
-                    type: 'Identifier'
-                }
-            });
+        const invokedFnCollection: jscodeshift.Collection = this.getInvokedFn(astCollection);
 
         invokedFnCollection.forEach(nodePath => {
             invokedFn.next(nodePath.value.callee.name); 
         });
 
         return astCollection;
+    }
+
+    getInvokedFn(astCollection: jscodeshift.Collection): jscodeshift.Collection {
+        return astCollection
+            .find(jscodeshift.CallExpression, {
+                callee: {
+                    type: 'Identifier'
+                }
+            });
+    }
+
+    epurateDeclaredFn(astCollection: jscodeshift.Collection): jscodeshift.Collection {
+        return astCollection
+            .find(jscodeshift.FunctionDeclaration)
+            .forEach(nodePath => {
+                if (!nodePath.references) {
+                    nodePath.replace();
+                }
+            });
     }
 
     convertToSource(astCollection: jscodeshift.Collection): void {
