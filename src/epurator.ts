@@ -3,8 +3,14 @@ import { Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
 
 export default class Epurator {
-    epurateDeclaredFn(astCollection: jscodeshift.Collection): jscodeshift.Collection {
-        return astCollection
+    astCollection: jscodeshift.Collection
+
+    constructor(ast: babelTypes.File) {
+        this.astCollection = jscodeshift(ast);
+    }
+
+    epurateDeclaredFn(): void {
+        this.astCollection
             .find(jscodeshift.FunctionDeclaration)
             .forEach(nodePath => {
                 if (!nodePath.references) {
@@ -17,8 +23,9 @@ export default class Epurator {
             });
     }
 
-    convertToSource(astCollection: jscodeshift.Collection): void {
+    getSource(): void {
         console.log('=====================');
-        console.info(astCollection.toSource());
+        this.epurateDeclaredFn();
+        console.info(this.astCollection.toSource());
     }
 }
