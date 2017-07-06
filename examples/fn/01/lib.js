@@ -23,6 +23,12 @@ export function double(n) {
     return addX(n, n);
 }
 
+// tree: triple, addX (x2)
+
+export function triple(n) {
+    return addX(n, addX(n, n));
+}
+
 // tree: doublePlusOne, double, addX, increment
 
 export function doublePlusOne(n) {

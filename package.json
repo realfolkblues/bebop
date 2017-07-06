@@ -1,12 +1,12 @@
 {
   "name": "tree-shaking-study",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Javascript ES2015 tree shaking study",
   "main": "index.js",
   "scripts": {
     "tsc": "./node_modules/typescript/bin/tsc",
     "analyze": "node ./dist/js/index.js",
-    "ilmente": "./node_modules/typescript/bin/tsc && node ./dist/js/ilmente/test3"
+    "all": "./node_modules/typescript/bin/tsc && node ./dist"
   },
   "repository": {
     "type": "git",

@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import { dirname } from 'path';
 import { Observable, Subject } from 'rxjs/Rx';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
@@ -44,8 +45,7 @@ export default class Crawler {
                     .forEach((nodePath) => {
                         const dependency: IResolverModule = {
                             id: nodePath.value.source.value,
-                            context: nodePath.value.loc.filename,
-                            isFileContext: true
+                            context: dirname(nodePath.value.loc.filename),
                         };
 
                         self.filesSubject.next(dependency);
