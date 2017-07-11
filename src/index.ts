@@ -4,8 +4,8 @@ import Scanner from './scanner';
 import Epurator from './epurator';
 
 const cwd = process.cwd();
-const targetBasePath = './example/fn/';
-const crawler = new Crawler(targetBasePath + process.argv[1]);
+const targetPath = process.env.npm_config_target_path || './examples/fn/01/index.js';
+const crawler = new Crawler(targetPath);
 const astStream = crawler.getASTStream();
 const scanner = new Scanner(astStream);
 const astStreamModded = scanner.getASTStream();
@@ -16,4 +16,3 @@ astStreamModded.subscribe(ast => {
 });
 
 crawler.start();
-

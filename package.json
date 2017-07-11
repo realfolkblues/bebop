@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "tsc": "./node_modules/typescript/bin/tsc",
-    "analyze": "node ./dist/js/index.js",
+    "analyze": "node ./dist/index.js",
     "all": "./node_modules/typescript/bin/tsc && node ./dist"
   },
   "repository": {
@@ -30,15 +30,17 @@
   },
   "homepage": "https://github.com/ilmente/tree-shaking-study#readme",
   "dependencies": {
-    "babel-types": "^6.25.0",
-    "babylon": "^6.17.3",
-    "jscodeshift": "^0.3.32",
-    "rxjs": "^5.4.0"
+    "babel-types": "6.25.0",
+    "babylon": "6.17.4",
+    "chalk": "2.0.1",
+    "debug": "2.6.8",
+    "jscodeshift": "0.3.32",
+    "rxjs": "5.4.0"
   },
   "devDependencies": {
-    "@types/babylon": "^6.16.1",
-    "@types/node": "^7.0.22",
-    "iconv-lite": "^0.4.18",
-    "typescript": "^2.3.4"
+    "@types/babylon": "6.16.1",
+    "@types/node": "7.0.22",
+    "iconv-lite": "0.4.18",
+    "typescript": "2.3.4"
   }
 }
