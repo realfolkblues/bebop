@@ -4,9 +4,10 @@
   "description": "Javascript ES2015 tree shaking study",
   "main": "index.js",
   "scripts": {
-    "tsc": "./node_modules/typescript/bin/tsc",
+    "watch": "tsc -w",
+    "build": "tsc",
     "analyze": "node ./dist/index.js",
-    "all": "./node_modules/typescript/bin/tsc && node ./dist"
+    "all": "tsc && node ./dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -42,6 +43,6 @@
     "@types/babylon": "6.16.1",
     "@types/node": "7.0.22",
     "iconv-lite": "0.4.18",
-    "typescript": "^2.3.4"
+    "typescript": "2.4.1"
   }
 }
