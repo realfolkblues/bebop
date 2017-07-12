@@ -15,9 +15,10 @@ export default class Scanner {
         this.astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 const astCollectionOriginal: jscodeshift.Collection = jscodeshift(ast);
-                const astModded = this.scanInvokedFn(astCollectionOriginal).getAST();
+                const astModded = this.scanASTCollection(astCollectionOriginal).getAST();
+                // const astModded = this.scanInvokedFn(astCollectionOriginal).getAST();
 
-                this.astStreamModded.next(astModded);
+                // this.astStreamModded.next(astModded);
             }, 
             error: (err: Error) => {
                 console.error(err);
@@ -26,6 +27,38 @@ export default class Scanner {
                 console.log('Scanning completed');
             }
         });
+    }
+
+    scanASTCollection(astCollection: jscodeshift.Collection): jscodeshift.Collection {
+        const identifiers: Subject<jscodeshift.Identifier> = new Subject<jscodeshift.Identifier>();
+
+        identifiers.subscribe({
+            next: (nodePath) => {
+                const nodeName = nodePath.node.name;
+                const nodeScope = nodePath.scope;
+                const nodeParent = nodePath.parent;
+
+
+                console.info('== NODE:', nodeName, ' PARENT ', nodeParent.node.type);
+                if (this.isDeclaration(nodeParent)) {
+                    console.log('PARENT IS DECLARATION');
+                }
+            },
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('Identifiers stream completed');
+            }
+        });
+
+        astCollection
+            .find(jscodeshift.Identifier)
+            .forEach(nodePath => {
+                identifiers.next(nodePath); 
+            });
+
+        return astCollection;
     }
 
     scanInvokedFn(astCollection: jscodeshift.Collection): jscodeshift.Collection {
@@ -75,5 +108,13 @@ export default class Scanner {
 
     getASTStream() {
         return this.astStreamModded;
+    }
+
+    isDeclaration(nodePath: jscodeshift.NodePath): boolean {
+        if (nodePath && nodePath.node && nodePath.node.type && (nodePath.node.type == jscodeshift.VariableDeclarator || nodePath.node.type == jscodeshift.FunctionDeclaration)) {
+            return true;
+        }
+
+        return false;
     }
 }
