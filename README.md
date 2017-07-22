@@ -8,13 +8,12 @@ This project has the aim to study and hopefully develop a tree shaking algorithm
 
 ``` js
 @root
+|-- dist                            // compiled code destination (created on build)
 |-- examples                        // code examples
 |   |-- fn                          // function-only examples
+|       |-- ##                      // number (e.g. 01)
 | 
 |-- src                             // tool actual code
-    |-- experiments                 // code experiments
-        |-- ilmente                 // @ilmente code playground
-        |-- riccardobevilacqua      // @riccardobevilacqua code playground
 ```
 
 ## Contributors
