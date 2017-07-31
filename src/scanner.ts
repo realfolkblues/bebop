@@ -16,7 +16,7 @@ export default class Scanner {
         this.astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 const astCollectionOriginal: jscodeshift.Collection = jscodeshift(ast);
-                const astModded = this.scanASTCollection(astCollectionOriginal).getAST();
+                const astModded: babelTypes.File = this.scanASTCollection(astCollectionOriginal).getAST();
 
                 this.astStreamModded.next(astModded);
             }, 
@@ -83,7 +83,7 @@ export default class Scanner {
         return astCollection;
     }
 
-    getASTStream(): any {
+    getASTStream(): Subject<babelTypes.File> {
         return this.astStreamModded;
     }
 
