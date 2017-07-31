@@ -1,13 +1,14 @@
 import * as babelTypes from 'babel-types';
 import { Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
+import Crawler from './crawler';
 
 export default class Scanner {
     astStream: Observable<babelTypes.File>
     astStreamModded: Subject<babelTypes.File> = new Subject<babelTypes.File>();
 
-    constructor(astStream: Observable<babelTypes.File>) { 
-        this.astStream = astStream;
+    constructor(crawler: Crawler) { 
+        this.astStream = crawler.getASTStream();
         this.scanASTStream();
     }
 
