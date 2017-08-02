@@ -7,10 +7,7 @@ const cwd = process.cwd();
 const targetPath = process.env.npm_config_target_path || './examples/fn/01/index.js';
 const crawler = new Crawler(targetPath);
 const scanner = new Scanner(crawler);
-
-scanner.scanASTStream();
-
-const astStreamModded = scanner.getASTStream();
+const astStreamModded = scanner.scanASTStream();
 
 astStreamModded.subscribe(ast => {
     const epurator = new Epurator(ast);
