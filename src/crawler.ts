@@ -14,14 +14,12 @@ export interface ICrawlerModule {
 export default class Crawler { 
     encoding: string
     entryPoint: string
-    resolver: Resolver
-    filesSubject: Subject<IResolverModule>
+    resolver: Resolver = new Resolver()
+    filesSubject: Subject<IResolverModule> = new Subject<IResolverModule>()
 
     constructor(entryPoint: string, encoding: string = 'utf8') { 
         this.entryPoint = entryPoint;
         this.encoding = encoding;
-        this.resolver = new Resolver();
-        this.filesSubject = new Subject<IResolverModule>();
     }
 
     getASTStream() { 
