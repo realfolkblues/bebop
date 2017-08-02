@@ -9,7 +9,6 @@ export default class Scanner {
 
     constructor(crawler: Crawler) { 
         this.astStream = crawler.getASTStream();
-        this.scanASTStream();
     }
 
     scanASTStream(): void {
