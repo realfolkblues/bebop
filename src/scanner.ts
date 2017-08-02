@@ -11,6 +11,9 @@ export default class Scanner {
         this.astStream = crawler.getASTStream();
     }
 
+    /**
+     * Launch AST stream analysis
+     */
     scanASTStream(): void {
         this.astStream.subscribe({
             next: (ast: babelTypes.File) => {
@@ -28,6 +31,10 @@ export default class Scanner {
         });
     }
 
+    /**
+     * Add number of references to declarations in a given AST Collection
+     * @param astCollection 
+     */
     scanASTCollection(astCollection: jscodeshift.Collection): jscodeshift.Collection {
         const identifiers: Subject<jscodeshift.Identifier> = new Subject<jscodeshift.Identifier>();
 
@@ -82,10 +89,17 @@ export default class Scanner {
         return astCollection;
     }
 
+    /**
+     * Get modified AST stream
+     */
     getASTStream(): Subject<babelTypes.File> {
         return this.astStreamModded;
     }
 
+    /**
+     * Verify if nodePath having an identifier child represents a declaration.
+     * @param nodePath 
+     */
     isDeclaration(nodePath: jscodeshift.NodePath): boolean {
         if (nodePath && nodePath.node && nodePath.node.type && (nodePath.node.type == jscodeshift.VariableDeclarator || nodePath.node.type == jscodeshift.FunctionDeclaration)) {
             return true;
