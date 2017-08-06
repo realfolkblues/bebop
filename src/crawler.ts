@@ -22,9 +22,7 @@ export default class Crawler {
         this.encoding = encoding;
     }
 
-    getASTStream() { 
-        const self = this;
-
+    getASTStream() {
         const astStream: Observable<babelTypes.File> = this.filesSubject
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string) => (
@@ -46,7 +44,7 @@ export default class Crawler {
                             context: dirname(nodePath.value.loc.filename),
                         };
 
-                        self.filesSubject.next(dependency);
+                        this.filesSubject.next(dependency);
                     });
             }, 
             error: (err: Error) => {
@@ -73,5 +71,4 @@ export default class Crawler {
             sourceType: 'module'
         })  
     }
-
 }
