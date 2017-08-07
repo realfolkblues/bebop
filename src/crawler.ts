@@ -22,7 +22,7 @@ export default class Crawler {
         this.encoding = encoding;
     }
 
-    getASTStream() {
+    getASTStream(): Observable<babelTypes.File> {
         const astStream: Observable<babelTypes.File> = this.filesSubject
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string) => {
@@ -59,17 +59,17 @@ export default class Crawler {
         return astStream;
     }
 
-    start() { 
+    start(): void { 
         this.filesSubject.next(<IResolverModule>{
             id: this.entryPoint
         });
     }
 
-    getAST(module: ICrawlerModule) { 
+    getAST(module: ICrawlerModule): babelTypes.File { 
         return babylon.parse(module.code, <babylon.BabylonOptions>{
             allowImportExportEverywhere: true,
             sourceFilename: module.fullPath,
             sourceType: 'module'
-        })  
+        });  
     }
 }
