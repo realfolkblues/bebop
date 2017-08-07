@@ -25,12 +25,13 @@ export default class Crawler {
     getASTStream() {
         const astStream: Observable<babelTypes.File> = this.filesSubject
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
-            .map((fullPath: string) => (
-                <ICrawlerModule>{
+            .map((fullPath: string) => {
+                console.log('== Processing [' + fullPath + ']');
+                return <ICrawlerModule>{
                     code: readFileSync(fullPath, this.encoding),
                     fullPath
                 }
-            ))
+            })
             .map((module: ICrawlerModule) => this.getAST(module))
             .share();
 
