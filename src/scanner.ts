@@ -5,7 +5,6 @@ import Crawler from './crawler';
 
 export default class Scanner {
     astStream: Observable<babelTypes.File>
-    astStreamModded: Subject<babelTypes.File> = new Subject<babelTypes.File>();
 
     constructor(crawler: Crawler) { 
         this.astStream = crawler.getASTStream();
@@ -14,13 +13,15 @@ export default class Scanner {
     /**
      * Launch AST stream analysis
      */
-    scanASTStream(): Subject<babelTypes.File> {
-        this.astStream.subscribe({
+    scanASTStream(astStream: Observable<babelTypes.File> = this.astStream): Subject<babelTypes.File> {
+        const astStreamModded: Subject<babelTypes.File> = new Subject<babelTypes.File>();
+
+        astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 const astCollectionOriginal: jscodeshift.Collection = jscodeshift(ast);
                 const astModded: babelTypes.File = this.scanASTCollection(astCollectionOriginal).getAST();
 
-                this.astStreamModded.next(astModded);
+                astStreamModded.next(astModded);
             }, 
             error: (err: Error) => {
                 console.error(err);
@@ -30,7 +31,7 @@ export default class Scanner {
             }
         });
 
-        return this.astStreamModded;
+        return astStreamModded;
     }
 
     /**
@@ -89,6 +90,22 @@ export default class Scanner {
             });
 
         return astCollection;
+    }
+
+    start(): void {
+        const astStreamCrossModule: Observable<babelTypes.File> = this.scanASTStream().repeat(1);
+
+        astStreamCrossModule.subscribe({
+            next: (ast: babelTypes.File) => {
+                
+            },
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('Scanning cross module completed');
+            }
+        });
     }
 
     /**
