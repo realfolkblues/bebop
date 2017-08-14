@@ -47,11 +47,9 @@ export default class Scanner {
 
                 if (!this.isDeclaration(identifierNodePath.parent)) {
                     astCollection
-                        .find(jscodeshift.FunctionDeclaration, {
-                            id: {
-                                name: identifierName
-                            }
-                        })
+                        .filter(nodePath => 
+                            this.isDeclaration(nodePath) && nodePath.id && nodePath.id.name && nodePath.id.name === identifierName
+                        )
                         .forEach(nodePath => {
                             if (parseInt(nodePath['references']) > -1) {
                                 nodePath.references++;
@@ -59,20 +57,6 @@ export default class Scanner {
                                 nodePath['references'] = 1;
                             }
                         });
-                        
-                    astCollection
-                        .find(jscodeshift.VariableDeclarator, {
-                            id: {
-                                name: identifierName
-                            }
-                        })
-                        .forEach(nodePath => {
-                            if (parseInt(nodePath['references']) > -1) {
-                                nodePath.references++;
-                            } else {
-                                nodePath['references'] = 1;
-                            }
-                        });    
                 }
             },
             error: (err: Error) => {
