@@ -81,7 +81,11 @@ export default class Scanner {
 
         astStreamCrossModule.subscribe({
             next: (ast: babelTypes.File) => {
-                
+                jscodeshift(ast)
+                    .find(jscodeshift.ImportDeclaration)
+                    .forEach(nodePath => {
+                        console.info(nodePath.node)
+                    });
             },
             error: (err: Error) => {
                 console.error(err);
@@ -93,7 +97,7 @@ export default class Scanner {
     }
 
     /**
-     * Verify if nodePath having an identifier child represents a declaration.
+     * Verify if nodePath has type FunctionDeclaration or VariableDeclarator, hence is a declaration with a child Identifier.
      * @param nodePath 
      */
     isDeclaration(nodePath: jscodeshift.NodePath): boolean {
