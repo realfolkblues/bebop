@@ -1,6 +1,7 @@
 import * as babelTypes from 'babel-types';
 import { Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
+import { isDeclaration } from './jscodeshift-util';
 import Crawler from './crawler';
 
 export default class Scanner {
@@ -45,10 +46,10 @@ export default class Scanner {
             next: (identifierNodePath) => {
                 const identifierName = identifierNodePath.node.name;
 
-                if (!this.isDeclaration(identifierNodePath.parent)) {
+                if (!isDeclaration(identifierNodePath.parent)) {
                     astCollection
                         .filter(nodePath => 
-                            this.isDeclaration(nodePath) && nodePath.id && nodePath.id.name && nodePath.id.name === identifierName
+                            isDeclaration(nodePath) && nodePath.id && nodePath.id.name && nodePath.id.name === identifierName
                         )
                         .forEach(nodePath => {
                             if (parseInt(nodePath['references']) > -1) {
@@ -94,17 +95,5 @@ export default class Scanner {
                 console.log('Scanning cross module completed');
             }
         });
-    }
-
-    /**
-     * Verify if nodePath has type FunctionDeclaration or VariableDeclarator, hence is a declaration with a child Identifier.
-     * @param nodePath 
-     */
-    isDeclaration(nodePath: jscodeshift.NodePath): boolean {
-        if (nodePath && nodePath.node && nodePath.node.type && (nodePath.node.type == jscodeshift.VariableDeclarator || nodePath.node.type == jscodeshift.FunctionDeclaration)) {
-            return true;
-        }
-
-        return false;
     }
 }
