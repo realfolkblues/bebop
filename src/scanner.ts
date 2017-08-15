@@ -5,24 +5,42 @@ import { isDeclaration } from './jscodeshift-util';
 import Crawler from './crawler';
 
 export default class Scanner {
-    astStream: Observable<babelTypes.File>
+    astStreamInput: Observable<babelTypes.File>
 
     constructor(crawler: Crawler) { 
-        this.astStream = crawler.getASTStream();
+        this.astStreamInput = crawler.getASTStream();
+
+        this.scanASTStream();
+
+        this.scanASTStream().subscribe({
+            next: (ast: babelTypes.File) => {
+                jscodeshift(ast)
+                    .find(jscodeshift.FunctionDeclaration)
+                    .forEach(nodePath => {
+                        console.info(nodePath.node.id.name, nodePath.references);
+                    });
+            },
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('Scanning cross module completed');
+            }
+        });
     }
 
     /**
      * Launch AST stream analysis
      */
-    scanASTStream(astStream: Observable<babelTypes.File> = this.astStream): Subject<babelTypes.File> {
-        const astStreamModded: Subject<babelTypes.File> = new Subject<babelTypes.File>();
+    scanASTStream(astStream: Observable<babelTypes.File> = this.astStreamInput): Subject<babelTypes.File> {
+        const astStreamOutput: Subject<babelTypes.File> = new Subject<babelTypes.File>();
 
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 const astCollectionOriginal: jscodeshift.Collection = jscodeshift(ast);
                 const astModded: babelTypes.File = this.scanASTCollection(astCollectionOriginal).getAST();
 
-                astStreamModded.next(astModded);
+                astStreamOutput.next(astModded);
             }, 
             error: (err: Error) => {
                 console.error(err);
@@ -32,7 +50,7 @@ export default class Scanner {
             }
         });
 
-        return astStreamModded;
+        return astStreamOutput;
     }
 
     /**
@@ -48,15 +66,23 @@ export default class Scanner {
 
                 if (!isDeclaration(identifierNodePath.parent)) {
                     astCollection
-                        .filter(nodePath => 
-                            isDeclaration(nodePath) && nodePath.id && nodePath.id.name && nodePath.id.name === identifierName
-                        )
-                        .forEach(nodePath => {
-                            if (parseInt(nodePath['references']) > -1) {
-                                nodePath.references++;
-                            } else {
-                                nodePath['references'] = 1;
+                        .find(jscodeshift.FunctionDeclaration, {
+                            id: {
+                                name: identifierName
                             }
+                        })
+                        .forEach(nodePath => {
+                            this.increaseReference(nodePath);
+                        });
+
+                    astCollection
+                        .find(jscodeshift.VariableDeclarator, {
+                            id: {
+                                name: identifierName
+                            }
+                        })
+                        .forEach(nodePath => {
+                            this.increaseReference(nodePath);
                         });
                 }
             },
@@ -77,23 +103,13 @@ export default class Scanner {
         return astCollection;
     }
 
-    start(): void {
-        const astStreamCrossModule: Observable<babelTypes.File> = this.scanASTStream().repeat(1);
+    increaseReference(nodePath: jscodeshift.NodePath): jscodeshift.NodePath {
+        if (parseInt(nodePath['references']) > -1) {
+            nodePath.references++;
+        } else {
+            nodePath['references'] = 1;
+        }
 
-        astStreamCrossModule.subscribe({
-            next: (ast: babelTypes.File) => {
-                jscodeshift(ast)
-                    .find(jscodeshift.ImportDeclaration)
-                    .forEach(nodePath => {
-                        console.info(nodePath.node)
-                    });
-            },
-            error: (err: Error) => {
-                console.error(err);
-            },
-            complete: () => {
-                console.log('Scanning cross module completed');
-            }
-        });
+        return nodePath;
     }
 }
