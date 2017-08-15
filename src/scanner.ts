@@ -1,7 +1,7 @@
 import * as babelTypes from 'babel-types';
 import { Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
-import { isDeclaration } from './jscodeshift-util';
+import { isDeclaration, increaseReference } from './jscodeshift-util';
 import Crawler from './crawler';
 
 export default class Scanner {
@@ -10,8 +10,12 @@ export default class Scanner {
     constructor(crawler: Crawler) { 
         this.astStreamInput = crawler.getASTStream();
 
-        this.scanASTStream();
+        this.scanCrossStream();
+    }
 
+    scanCrossStream(): void {
+        this.scanASTStream();
+        
         this.scanASTStream().subscribe({
             next: (ast: babelTypes.File) => {
                 jscodeshift(ast)
@@ -72,7 +76,7 @@ export default class Scanner {
                             }
                         })
                         .forEach(nodePath => {
-                            this.increaseReference(nodePath);
+                            increaseReference(nodePath);
                         });
 
                     astCollection
@@ -82,7 +86,7 @@ export default class Scanner {
                             }
                         })
                         .forEach(nodePath => {
-                            this.increaseReference(nodePath);
+                            increaseReference(nodePath);
                         });
                 }
             },
@@ -101,15 +105,5 @@ export default class Scanner {
             });
 
         return astCollection;
-    }
-
-    increaseReference(nodePath: jscodeshift.NodePath): jscodeshift.NodePath {
-        if (parseInt(nodePath['references']) > -1) {
-            nodePath.references++;
-        } else {
-            nodePath['references'] = 1;
-        }
-
-        return nodePath;
     }
 }

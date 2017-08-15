@@ -11,3 +11,17 @@ export function isDeclaration(nodePath: jscodeshift.NodePath): boolean {
 
     return false;
 }
+
+/**
+ * Create attribute references for a given nodePath and apply a unitary increment
+ * @param nodePath 
+ */
+export function increaseReference(nodePath: jscodeshift.NodePath): jscodeshift.NodePath {
+    if (parseInt(nodePath['references']) > -1) {
+        nodePath.references++;
+    } else {
+        nodePath['references'] = 1;
+    }
+
+    return nodePath;
+}
