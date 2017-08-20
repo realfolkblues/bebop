@@ -25,26 +25,26 @@ export default class Scanner {
         
         astStreamScanned.subscribe({
             next: (ast: babelTypes.File) => {
-                jscodeshift(ast)
-                    .find(jscodeshift.ImportDeclaration)
-                    .forEach(nodePath => {
-                        const modulePath: string = resolve(nodePath.node.source.value + '.js');
-                        console.info('== MODULE PATH:', modulePath);
-                        const astStreamMirror: Observable<babelTypes.File> = this.astStreamInput
-                            .repeat(1)
-                            .filter(astMirror => {
-                                const fileName: string = astMirror[0].value.loc.SourceLocation.filename;
-                                console.info('== FILENAME:', fileName);
-                                return modulePath === fileName;
-                            });
+                // jscodeshift(ast)
+                //     .find(jscodeshift.ImportDeclaration)
+                //     .forEach(nodePath => {
+                //         const modulePath: string = resolve(nodePath.node.source.value + '.js');
+                //         console.info('== MODULE PATH:', modulePath);
+                //         const astStreamMirror: Observable<babelTypes.File> = this.astStreamInput
+                //             .repeat(1)
+                //             .filter(astMirror => {
+                //                 const fileName: string = astMirror[0].value.loc.SourceLocation.filename;
+                //                 console.info('== FILENAME:', fileName);
+                //                 return modulePath === fileName;
+                //             });
 
-                        astStreamMirror.subscribe({
-                            next: (astCross: babelTypes.File) => {
-                                console.info('== CHECK FILENAME', astCross[0].value.loc.SourceLocation.filename);
-                            }
-                        });
+                //         astStreamMirror.subscribe({
+                //             next: (astCross: babelTypes.File) => {
+                //                 console.info('== CHECK FILENAME', astCross[0].value.loc.SourceLocation.filename);
+                //             }
+                //         });
 
-                    });
+                //     });
             },
             error: (err: Error) => {
                 console.error(err);
@@ -84,12 +84,14 @@ export default class Scanner {
      * Add number of references to declarations in a given AST Collection
      * @param astCollection 
      */
-    scanASTCollection(astCollection: jscodeshift.Collection): jscodeshift.Collection {
+    scanASTCollection(astCollection: jscodeshift.Collection, identifierName: string = ''): jscodeshift.Collection {
         const identifiers: Subject<jscodeshift.Identifier> = new Subject<jscodeshift.Identifier>();
 
         identifiers.subscribe({
             next: (identifierNodePath) => {
-                const identifierName = identifierNodePath.node.name;
+                if (identifierName === '') {
+                    identifierName = identifierNodePath.node.name;
+                }
 
                 if (!isDeclaration(identifierNodePath.parent)) {
                     astCollection
