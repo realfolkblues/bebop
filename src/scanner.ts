@@ -25,6 +25,7 @@ export default class Scanner {
         
         astStreamScanned.subscribe({
             next: (ast: babelTypes.File) => {
+                console.info('== SCAN AST STREAM AGAIN', ast[0].value.loc.filename);
                 // jscodeshift(ast)
                 //     .find(jscodeshift.ImportDeclaration)
                 //     .forEach(nodePath => {
@@ -64,6 +65,7 @@ export default class Scanner {
 
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
+                console.info('== SCAN AST STREAM', ast.loc);
                 const astCollectionOriginal: jscodeshift.Collection = jscodeshift(ast);
                 const astModded: babelTypes.File = this.scanASTCollection(astCollectionOriginal).getAST();
 
@@ -83,6 +85,7 @@ export default class Scanner {
     /**
      * Add number of references to declarations in a given AST Collection
      * @param astCollection 
+     * @param identifierName
      */
     scanASTCollection(astCollection: jscodeshift.Collection, identifierName: string = ''): jscodeshift.Collection {
         const identifiers: Subject<jscodeshift.Identifier> = new Subject<jscodeshift.Identifier>();
