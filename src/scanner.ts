@@ -66,10 +66,8 @@ export default class Scanner {
         astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 console.info('== SCAN AST STREAM', ast.loc);
-                const astCollectionOriginal: jscodeshift.Collection = jscodeshift(ast);
-                const astModded: babelTypes.File = this.scanASTCollection(astCollectionOriginal).getAST();
 
-                astStreamOutput.next(astModded);
+                astStreamOutput.next(this.scanDeclaration(ast));
             }, 
             error: (err: Error) => {
                 console.error(err);
@@ -83,11 +81,12 @@ export default class Scanner {
     }
 
     /**
-     * Add number of references to declarations in a given AST Collection
-     * @param astCollection 
+     * Add number of references to declarations in a given AST
+     * @param ast
      * @param identifierName
      */
-    scanASTCollection(astCollection: jscodeshift.Collection, identifierName: string = ''): jscodeshift.Collection {
+    scanDeclaration(ast: babelTypes.File, identifierName: string = ''): babelTypes.File {
+        const astCollection: jscodeshift.Collection = jscodeshift(ast);
         const identifiers: Subject<jscodeshift.Identifier> = new Subject<jscodeshift.Identifier>();
 
         identifiers.subscribe({
@@ -132,6 +131,6 @@ export default class Scanner {
                 identifiers.next(nodePath); 
             });
 
-        return astCollection;
+        return astCollection.getAST();
     }
 }
