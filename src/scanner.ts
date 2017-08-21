@@ -21,31 +21,11 @@ export default class Scanner {
      * - Egon Spengler
      */
     start(): void {
-        const astStreamScanned: Observable<babelTypes.File> = this.scanASTStream();
+        const astStreamScanned: Observable<babelTypes.File> = this.astStreamInput.map(ast => this.scanDeclaration(ast));
         
         astStreamScanned.subscribe({
             next: (ast: babelTypes.File) => {
-                console.info('== SCAN AST STREAM AGAIN', ast[0].value.loc.filename);
-                // jscodeshift(ast)
-                //     .find(jscodeshift.ImportDeclaration)
-                //     .forEach(nodePath => {
-                //         const modulePath: string = resolve(nodePath.node.source.value + '.js');
-                //         console.info('== MODULE PATH:', modulePath);
-                //         const astStreamMirror: Observable<babelTypes.File> = this.astStreamInput
-                //             .repeat(1)
-                //             .filter(astMirror => {
-                //                 const fileName: string = astMirror[0].value.loc.SourceLocation.filename;
-                //                 console.info('== FILENAME:', fileName);
-                //                 return modulePath === fileName;
-                //             });
-
-                //         astStreamMirror.subscribe({
-                //             next: (astCross: babelTypes.File) => {
-                //                 console.info('== CHECK FILENAME', astCross[0].value.loc.SourceLocation.filename);
-                //             }
-                //         });
-
-                //     });
+                console.info('== SCANNED', ast[0].value.loc.filename);
             },
             error: (err: Error) => {
                 console.error(err);
@@ -57,37 +37,13 @@ export default class Scanner {
     }
 
     /**
-     * Launch AST stream analysis
-     * @param astStream
-     */
-    scanASTStream(astStream: Observable<babelTypes.File> = this.astStreamInput): Subject<babelTypes.File> {
-        const astStreamOutput: Subject<babelTypes.File> = new Subject<babelTypes.File>();
-
-        astStream.subscribe({
-            next: (ast: babelTypes.File) => {
-                console.info('== SCAN AST STREAM', ast.loc);
-
-                astStreamOutput.next(this.scanDeclaration(ast));
-            }, 
-            error: (err: Error) => {
-                console.error(err);
-            },
-            complete: () => {
-                console.log('Scanning completed');
-            }
-        });
-
-        return astStreamOutput;
-    }
-
-    /**
      * Add number of references to declarations in a given AST
      * @param ast
      * @param identifierName
      */
     scanDeclaration(ast: babelTypes.File, identifierName: string = ''): babelTypes.File {
         const astCollection: jscodeshift.Collection = jscodeshift(ast);
-        const identifiers: Subject<jscodeshift.Identifier> = new Subject<jscodeshift.Identifier>();
+        const identifiers: Observable<jscodeshift.Identifier> = Observable.from(astCollection.find(jscodeshift.Identifier).__paths);
 
         identifiers.subscribe({
             next: (identifierNodePath) => {
@@ -124,12 +80,6 @@ export default class Scanner {
                 console.log('Identifiers stream completed');
             }
         });
-
-        astCollection
-            .find(jscodeshift.Identifier)
-            .forEach(nodePath => {
-                identifiers.next(nodePath); 
-            });
 
         return astCollection.getAST();
     }
