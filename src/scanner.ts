@@ -1,12 +1,13 @@
 import { resolve } from 'path';
 import * as babelTypes from 'babel-types';
-import { Observable, Subject } from 'rxjs/Rx';
+import { BehaviorSubject, Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
 import { isDeclaration, increaseReference } from './jscodeshift-util';
 import Crawler from './crawler';
 
 export default class Scanner {
     astStreamInput: Observable<babelTypes.File>
+    astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([]);
 
     constructor(crawler: Crawler) { 
         this.astStreamInput = crawler.getASTStream();
@@ -21,17 +22,42 @@ export default class Scanner {
      * - Egon Spengler
      */
     start(): void {
-        const astStreamScanned: Observable<babelTypes.File> = this.astStreamInput.map(ast => this.scanDeclaration(ast));
+        this.scanInputStream();
+
+        this.astListStream.subscribe({
+            next: ((astList: babelTypes.File[]) => {
+                if (astList && astList.length > 0) {
+                    console.info('Processing AST list...');
+                }
+            }),
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('Scanning cross module: level 2 completed');
+            }
+        });
+    }
+
+    scanInputStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
+        const astStreamScanned: Observable<babelTypes.File> = Observable
+            .from(this.astStreamInput)
+            .map((ast: babelTypes.File) => {
+                return this.scanDeclaration(ast);
+            });
         
         astStreamScanned.subscribe({
             next: (ast: babelTypes.File) => {
-                console.info('== SCANNED', ast[0].value.loc.filename);
+                const astList = this.astListStream.getValue();
+
+                astList.push(ast);
+                this.astListStream.next(astList);
             },
             error: (err: Error) => {
                 console.error(err);
             },
             complete: () => {
-                console.log('Scanning cross module completed');
+                console.log('Scanning cross module: level 1 completed');
             }
         });
     }
