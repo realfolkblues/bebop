@@ -1,4 +1,4 @@
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
 import * as babelTypes from 'babel-types';
 import { BehaviorSubject, Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
@@ -7,9 +7,13 @@ import Crawler from './crawler';
 
 export default class Scanner {
     astStreamInput: Observable<babelTypes.File>
-    astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([]);
+    astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([])
+    sourceDir: string
+
 
     constructor(crawler: Crawler) { 
+        this.sourceDir = resolve(dirname(crawler.entryPoint));
+        console.log('Source directory [' + this.sourceDir + ']');
         this.astStreamInput = crawler.getASTStream();
 
         this.start();
@@ -61,8 +65,15 @@ export default class Scanner {
                             jscodeshift(ast)
                                 .find(jscodeshift.ImportDeclaration)
                                 .forEach(nodePath => {
-                                    const importedModule: string = nodePath.node.source.value;
-                                    console.info('Found import declaration:', importedModule);
+                                    const importedModuleFullPath: string = resolve(this.sourceDir, nodePath.node.source.value + '.js');
+                                    console.info('Found imported module [' + importedModuleFullPath + ']');
+
+                                    const importedModuleAst: babelTypes.File = astList
+                                        .find((moduleAst: babelTypes.File) => {
+                                            return moduleAst[0].value.program.loc.filename === importedModuleFullPath;
+                                        });
+
+                                    this.scanDeclaration(importedModuleAst, importedModuleFullPath);
                                 });
                         },
                         error: (err: Error) => {
