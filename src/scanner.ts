@@ -22,26 +22,13 @@ export default class Scanner {
      * - Egon Spengler
      */
     start(): void {
-        this.scanInputStream();
-
-        this.astListStream.subscribe({
-            next: ((astList: babelTypes.File[]) => {
-                if (astList && astList.length > 0) {
-                    console.info('Processing AST list...');
-                }
-            }),
-            error: (err: Error) => {
-                console.error(err);
-            },
-            complete: () => {
-                console.log('Scanning cross module: level 2 completed');
-            }
-        });
+        this.setupASTListStream();
+        this.scanImport();
     }
 
-    scanInputStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
+    setupASTListStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
         const astStreamScanned: Observable<babelTypes.File> = Observable
-            .from(this.astStreamInput)
+            .from(inputStream)
             .map((ast: babelTypes.File) => {
                 return this.scanDeclaration(ast);
             });
@@ -58,6 +45,39 @@ export default class Scanner {
             },
             complete: () => {
                 console.log('Scanning cross module: level 1 completed');
+            }
+        });
+    }
+
+    scanImport(): void {
+        this.astListStream.subscribe({
+            next: ((astList: babelTypes.File[]) => {
+                if (astList && astList.length > 0) {
+                    console.info('Processing list of ' + astList.length + ' AST...');
+                    const listMonitor: Observable<babelTypes.File> = Observable.from(astList);
+
+                    listMonitor.subscribe({
+                        next: (ast: babelTypes.File) => {
+                            jscodeshift(ast)
+                                .find(jscodeshift.ImportDeclaration)
+                                .forEach(nodePath => {
+
+                                });
+                        },
+                        error: (err: Error) => {
+                            console.error(err);
+                        },
+                        complete: () => {
+                            console.log('List monitor stream completed');
+                        }
+                    });
+                }
+            }),
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('Scanning cross module: level 2 completed');
             }
         });
     }
