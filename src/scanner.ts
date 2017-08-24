@@ -52,7 +52,7 @@ export default class Scanner {
     scanImport(): void {
         this.astListStream.subscribe({
             next: ((astList: babelTypes.File[]) => {
-                if (astList && astList.length > 0) {
+                if (astList && astList.length > 1) {
                     console.info('Processing list of ' + astList.length + ' AST...');
                     const listMonitor: Observable<babelTypes.File> = Observable.from(astList);
 
@@ -61,7 +61,8 @@ export default class Scanner {
                             jscodeshift(ast)
                                 .find(jscodeshift.ImportDeclaration)
                                 .forEach(nodePath => {
-
+                                    const importedModule: string = nodePath.node.source.value;
+                                    console.info('Found import declaration:', importedModule);
                                 });
                         },
                         error: (err: Error) => {
