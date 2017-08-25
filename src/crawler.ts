@@ -26,7 +26,7 @@ export default class Crawler {
         const astStream: Observable<babelTypes.File> = this.filesSubject
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string) => {
-                console.log('== Processing [' + fullPath + ']');
+                console.log('Processing file [' + fullPath + ']');
                 return <ICrawlerModule>{
                     code: readFileSync(fullPath, this.encoding),
                     fullPath
@@ -52,7 +52,7 @@ export default class Crawler {
                 console.error(err);
             },
             complete: () => {
-                console.log('end');
+                console.log('AST stream completed');
             }
         });
 
