@@ -26,8 +26,8 @@ export default class Scanner {
      * - Egon Spengler
      */
     start(): void {
-        this.setupASTListStream();
-        this.scanImport();
+        // this.setupASTListStream();
+        // this.scanImport();
     }
 
     setupASTListStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
