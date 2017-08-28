@@ -25,12 +25,12 @@ export default class Crawler {
     getASTStream(): Observable<babelTypes.File> {
         const crawlerModuleStream: Observable<ICrawlerModule> = this.discoverFiles();
         const astStream: Observable<babelTypes.File> = crawlerModuleStream.map((module: ICrawlerModule) => this.getAST(module));
-        
+
         return this.discoverDependencies(astStream);
     }
 
-    discoverFiles(): Observable<ICrawlerModule> {
-        return this.filesSubject
+    discoverFiles(fileStream: Subject<IResolverModule> = this.filesSubject): Observable<ICrawlerModule> {
+        return fileStream
             .asObservable()
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string) => {
