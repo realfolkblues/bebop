@@ -16,8 +16,6 @@ export default class Crawler {
     entryPoint: string
     resolver: Resolver = new Resolver()
     filesSubject: Subject<IResolverModule> = new Subject<IResolverModule>()
-    crawlerModuleStream: Observable<ICrawlerModule>
-    astStream: Observable<babelTypes.File>
 
     constructor(entryPoint: string, encoding: string = 'utf8') { 
         this.entryPoint = entryPoint;
@@ -25,15 +23,14 @@ export default class Crawler {
     }
 
     getASTStream(): Observable<babelTypes.File> {
-        this.discoverFiles();
-        this.astStream = this.crawlerModuleStream.map((module: ICrawlerModule) => this.getAST(module));
-        this.discoverDependencies();
-
-        return this.astStream;
+        const crawlerModuleStream: Observable<ICrawlerModule> = this.discoverFiles();
+        const astStream: Observable<babelTypes.File> = crawlerModuleStream.map((module: ICrawlerModule) => this.getAST(module));
+        
+        return this.discoverDependencies(astStream);
     }
 
-    discoverFiles() {
-        this.crawlerModuleStream = this.filesSubject
+    discoverFiles(): Observable<ICrawlerModule> {
+        return this.filesSubject
             .asObservable()
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string) => {
@@ -46,8 +43,8 @@ export default class Crawler {
             .share();
     }
 
-    discoverDependencies(): void {
-        this.astStream.subscribe({
+    discoverDependencies(astStream: Observable<babelTypes.File>): Observable<babelTypes.File> {
+        astStream.subscribe({
             next: (ast: babelTypes.File) => {
                 jscodeshift(ast)
                     .find(jscodeshift.ImportDeclaration)
@@ -67,6 +64,8 @@ export default class Crawler {
                 console.log('AST stream completed');
             }
         });
+
+        return astStream;
     }
 
     start(): void { 
