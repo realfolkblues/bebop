@@ -8,15 +8,13 @@ import Crawler from './crawler';
 export default class Scanner {
     astStreamInput: Observable<babelTypes.File>
     astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([])
-    sourceDir: string
-
+    crawler: Crawler
 
     constructor(crawler: Crawler) { 
-        this.sourceDir = resolve(dirname(crawler.entryPoint));
-        console.log('Source directory [' + this.sourceDir + ']');
-        this.astStreamInput = crawler.getASTStream();
+        console.log('Scanner init');
+        this.crawler = crawler;
 
-        // this.start();
+        this.start();
     }
 
     /**
@@ -26,8 +24,10 @@ export default class Scanner {
      * - Egon Spengler
      */
     start(): void {
-        this.setupASTListStream();
-        this.scanImport();
+        console.log('Scanner start');
+        this.astStreamInput = this.crawler.getASTStream();
+        // this.setupASTListStream();
+        // this.scanImport();
     }
 
     setupASTListStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
@@ -65,7 +65,7 @@ export default class Scanner {
                             jscodeshift(ast)
                                 .find(jscodeshift.ImportDeclaration)
                                 .forEach(nodePath => {
-                                    const importedModuleFullPath: string = resolve(this.sourceDir, nodePath.node.source.value + '.js');
+                                    const importedModuleFullPath: string = resolve(this.crawler.sourceDir, nodePath.node.source.value + '.js');
                                     console.info('Found imported module [' + importedModuleFullPath + ']');
 
                                     const importedModuleAst: babelTypes.File = astList

@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
 import { Observable, Subject } from 'rxjs/Rx';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
@@ -16,16 +16,21 @@ export default class Crawler {
     entryPoint: string
     resolver: Resolver = new Resolver()
     filesSubject: Subject<IResolverModule> = new Subject<IResolverModule>()
+    pathStream: Observable<string> = Observable.empty()
+    sourceDir: string
 
     constructor(entryPoint: string, encoding: string = 'utf8') { 
         this.entryPoint = entryPoint;
         this.encoding = encoding;
+
+        this.sourceDir = resolve(dirname(entryPoint));
     }
 
     getASTStream(): Observable<babelTypes.File> {
-        const pathStream: Observable<string> = this.discoverFiles();
+        this.pathStream = this.discoverFiles();
+        
         const astStream: Observable<babelTypes.File> = this
-            .discoverModules(pathStream)
+            .discoverModules()
             .map((module: ICrawlerModule) => this.getAST(module));
 
         return this.discoverDependencies(astStream);
@@ -36,14 +41,13 @@ export default class Crawler {
             .asObservable()
             .map((dep: IResolverModule) => {
                 const fullPath: string = this.resolver.resolve(dep);                
-                console.log('Discovered file [' + fullPath + ']');
-
+                console.log('Crawler discovered file [' + fullPath + ']');
                 return fullPath;
             })
             .share();
     }
 
-    discoverModules(pathStream: Observable<string>): Observable<ICrawlerModule> {
+    discoverModules(pathStream: Observable<string> = this.pathStream): Observable<ICrawlerModule> {
         return pathStream
             .map((fullPath: string) => {
                 return <ICrawlerModule>{
@@ -80,6 +84,7 @@ export default class Crawler {
     }
 
     start(): void { 
+        console.log('Crawler started in [' + this.sourceDir + ']');
         this.filesSubject.next(<IResolverModule>{
             id: this.entryPoint
         });
