@@ -23,18 +23,29 @@ export default class Crawler {
     }
 
     getASTStream(): Observable<babelTypes.File> {
-        const crawlerModuleStream: Observable<ICrawlerModule> = this.discoverFiles();
-        const astStream: Observable<babelTypes.File> = crawlerModuleStream.map((module: ICrawlerModule) => this.getAST(module));
+        const pathStream: Observable<string> = this.discoverFiles();
+        const astStream: Observable<babelTypes.File> = this
+            .discoverModules(pathStream)
+            .map((module: ICrawlerModule) => this.getAST(module));
 
         return this.discoverDependencies(astStream);
     }
 
-    discoverFiles(fileStream: Subject<IResolverModule> = this.filesSubject): Observable<ICrawlerModule> {
+    discoverFiles(fileStream: Subject<IResolverModule> = this.filesSubject): Observable<string> {
         return fileStream
             .asObservable()
-            .map((dep: IResolverModule) => this.resolver.resolve(dep))
+            .map((dep: IResolverModule) => {
+                const fullPath: string = this.resolver.resolve(dep);                
+                console.log('Discovered file [' + fullPath + ']');
+
+                return fullPath;
+            })
+            .share();
+    }
+
+    discoverModules(pathStream: Observable<string>): Observable<ICrawlerModule> {
+        return pathStream
             .map((fullPath: string) => {
-                console.log('Processing file [' + fullPath + ']');
                 return <ICrawlerModule>{
                     code: readFileSync(fullPath, this.encoding),
                     fullPath

@@ -16,7 +16,7 @@ export default class Scanner {
         console.log('Source directory [' + this.sourceDir + ']');
         this.astStreamInput = crawler.getASTStream();
 
-        this.start();
+        // this.start();
     }
 
     /**
@@ -26,8 +26,8 @@ export default class Scanner {
      * - Egon Spengler
      */
     start(): void {
-        // this.setupASTListStream();
-        // this.scanImport();
+        this.setupASTListStream();
+        this.scanImport();
     }
 
     setupASTListStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
