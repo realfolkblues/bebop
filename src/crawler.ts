@@ -82,18 +82,18 @@ export default class Crawler {
         return astStream;
     }
 
-    start(): void { 
-        console.log('Crawler started in [' + this.sourceDir + ']');
-        this.filesSubject.next(<IResolverModule>{
-            id: this.entryPoint
-        });
-    }
-
     getAST(module: ICrawlerModule): babelTypes.File { 
         return babylon.parse(module.code, <babylon.BabylonOptions>{
             allowImportExportEverywhere: true,
             sourceFilename: module.fullPath,
             sourceType: 'module'
         });  
+    }
+
+    start(): void { 
+        console.log('Crawler started in [' + this.sourceDir + ']');
+        this.filesSubject.next(<IResolverModule>{
+            id: this.entryPoint
+        });
     }
 }
