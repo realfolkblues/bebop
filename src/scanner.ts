@@ -14,7 +14,7 @@ export default class Scanner {
         console.log('Scanner init');
         this.crawler = crawler;
 
-        this.start();
+        // this.start();
     }
 
     /**

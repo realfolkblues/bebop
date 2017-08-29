@@ -16,13 +16,12 @@ export default class Crawler {
     entryPoint: string
     resolver: Resolver = new Resolver()
     filesSubject: Subject<IResolverModule> = new Subject<IResolverModule>()
-    pathStream: Observable<string> = Observable.empty()
+    pathStream: Observable<string>
     sourceDir: string
 
     constructor(entryPoint: string, encoding: string = 'utf8') { 
         this.entryPoint = entryPoint;
         this.encoding = encoding;
-
         this.sourceDir = resolve(dirname(entryPoint));
     }
 

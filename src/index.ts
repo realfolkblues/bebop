@@ -11,4 +11,3 @@ const monitor = new Monitor(crawler);
 const scanner = new Scanner(crawler);
 
 crawler.start();
-monitor.start();
