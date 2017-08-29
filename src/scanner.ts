@@ -17,19 +17,6 @@ export default class Scanner {
         // this.start();
     }
 
-    /**
-     * Launch cross AST stream analysis
-     * 
-     * >Don't cross the streams.
-     * - Egon Spengler
-     */
-    start(): void {
-        console.log('Scanner start');
-        this.astStreamInput = this.crawler.getASTStream();
-        // this.setupASTListStream();
-        // this.scanImport();
-    }
-
     setupASTListStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
         const astStreamScanned: Observable<babelTypes.File> = Observable
             .from(inputStream)
@@ -140,5 +127,12 @@ export default class Scanner {
         });
 
         return astCollection.getAST();
+    }
+
+    start(): void {
+        console.log('Scanner start');
+        this.astStreamInput = this.crawler.getASTStream();
+        // this.setupASTListStream();
+        // this.scanImport();
     }
 }
