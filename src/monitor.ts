@@ -32,7 +32,9 @@ export default class Monitor {
     start(): void {
         this.stackStream.subscribe({
             next: (stack: IMonitorModule[]) => {
-                console.info('Monitor stack', stack);
+                if (stack.length > 0) {
+                    console.info('Monitor stack', stack);
+                }
             },
             error: (err: Error) => {
                 console.error(err);
