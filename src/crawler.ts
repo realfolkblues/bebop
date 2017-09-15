@@ -15,7 +15,7 @@ export default class Crawler {
     encoding: string
     entryPoint: string
     resolver: Resolver = new Resolver()
-    filesSubject: Subject<IResolverModule> = new Subject<IResolverModule>()
+    files: Subject<IResolverModule> = new Subject<IResolverModule>()
     pathStream: Observable<string>
     sourceDir: string
 
@@ -35,7 +35,7 @@ export default class Crawler {
         return this.discoverDependencies(astStream);
     }
 
-    discoverFiles(fileStream: Subject<IResolverModule> = this.filesSubject): Observable<string> {
+    discoverFiles(fileStream: Subject<IResolverModule> = this.files): Observable<string> {
         return fileStream
             .asObservable()
             .map((dep: IResolverModule) => {
@@ -68,7 +68,7 @@ export default class Crawler {
                             context: dirname(nodePath.value.loc.filename),
                         };
 
-                        this.filesSubject.next(dependency);
+                        this.files.next(dependency);
                     });
             }, 
             error: (err: Error) => {
@@ -92,7 +92,7 @@ export default class Crawler {
 
     start(): void { 
         console.log('Crawler started in [' + this.sourceDir + ']');
-        this.filesSubject.next(<IResolverModule>{
+        this.files.next(<IResolverModule>{
             id: this.entryPoint
         });
     }
