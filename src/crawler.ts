@@ -24,28 +24,6 @@ export default class Crawler {
         this.encoding = encoding;
     }
 
-    getASTStream(): Observable<babelTypes.File> {
-        this.discoverFiles();
-        this.astStream = this.crawlerModuleStream.map((module: ICrawlerModule) => this.getAST(module));
-        this.discoverDependencies();
-
-        return this.astStream;
-    }
-
-    discoverFiles() {
-        this.crawlerModuleStream = this.filesSubject
-            .asObservable()
-            .map((dep: IResolverModule) => this.resolver.resolve(dep))
-            .map((fullPath: string) => {
-                console.log('Processing file [' + fullPath + ']');
-                return <ICrawlerModule>{
-                    code: readFileSync(fullPath, this.encoding),
-                    fullPath
-                }
-            })
-            .share();
-    }
-
     discoverDependencies(): void {
         this.astStream.subscribe({
             next: (ast: babelTypes.File) => {
@@ -69,17 +47,39 @@ export default class Crawler {
         });
     }
 
-    start(): void { 
-        this.filesSubject.next(<IResolverModule>{
-            id: this.entryPoint
-        });
+    discoverFiles() {
+        this.crawlerModuleStream = this.filesSubject
+            .asObservable()
+            .map((dep: IResolverModule) => this.resolver.resolve(dep))
+            .map((fullPath: string): ICrawlerModule => {
+                console.log('Processing file [' + fullPath + ']');
+                return <ICrawlerModule>{
+                    code: readFileSync(fullPath, this.encoding),
+                    fullPath
+                }
+            })
+            .share();
     }
-
+    
     getAST(module: ICrawlerModule): babelTypes.File { 
         return babylon.parse(module.code, <babylon.BabylonOptions>{
             allowImportExportEverywhere: true,
             sourceFilename: module.fullPath,
             sourceType: 'module'
         });  
+    }
+
+    getASTStream(): Observable<babelTypes.File> {
+        this.discoverFiles();
+        this.astStream = this.crawlerModuleStream.map((module: ICrawlerModule): babelTypes.File => this.getAST(module));
+        this.discoverDependencies();
+
+        return this.astStream;
+    }
+
+    start(): void { 
+        this.filesSubject.next(<IResolverModule>{
+            id: this.entryPoint
+        });
     }
 }
