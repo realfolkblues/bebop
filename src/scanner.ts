@@ -1,4 +1,4 @@
-import { resolve, dirname } from 'path';
+import { dirname, resolve } from 'path';
 import * as babelTypes from 'babel-types';
 import { BehaviorSubject, Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
@@ -14,7 +14,7 @@ export default class Scanner {
         console.log('Scanner init');
         this.crawler = crawler;
 
-        // this.start();
+        this.start();
     }
 
     setupASTListStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
@@ -131,6 +131,7 @@ export default class Scanner {
 
     start(): void {
         console.log('Scanner start');
+        
         this.astStreamInput = this.crawler.getASTStream();
         // this.setupASTListStream();
         // this.scanImport();
