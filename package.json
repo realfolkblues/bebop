@@ -37,7 +37,8 @@
     "debug": "2.6.8",
     "escape-string-regexp": "^1.0.5",
     "jscodeshift": "0.3.32",
-    "rxjs": "5.4.2"
+    "rxjs": "5.4.2",
+    "tslint": "^5.7.0"
   },
   "devDependencies": {
     "@types/babylon": "6.16.1",
