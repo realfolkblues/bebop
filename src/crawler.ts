@@ -8,6 +8,10 @@ import { IResolverModule, Resolver } from './resolver';
 
 export interface ICrawlerModule { 
     code: string,
+    fullPath: string
+}
+
+export interface IMonitorModule {
     fullPath: string,
     processed: boolean
 }
@@ -17,14 +21,16 @@ export default class Crawler {
     crawlerModuleStream: Observable<ICrawlerModule>
     encoding: string
     entryPoint: string
-    filesSubject: Subject<IResolverModule> = new Subject<IResolverModule>()
+    filesStream: Subject<IResolverModule> = new Subject<IResolverModule>()
     resolver: Resolver = new Resolver()
     sourceDir: string
+    stack: IMonitorModule[] = []
 
-    constructor(entryPoint: string, encoding: string = 'utf8') { 
+    constructor(entryPoint: string, encoding: string = 'utf8') {
         this.entryPoint = entryPoint;
         this.sourceDir = dirname(resolve(entryPoint));
         this.encoding = encoding;
+        console.log('Crawler init at [' + this.sourceDir + ']');
     }
 
     discoverDependencies(): void {
@@ -38,7 +44,7 @@ export default class Crawler {
                             context: dirname(nodePath.value.loc.filename),
                         };
 
-                        this.filesSubject.next(dependency);
+                        this.filesStream.next(dependency);
                     });
             }, 
             error: (err: Error) => {
@@ -50,27 +56,30 @@ export default class Crawler {
         });
     }
 
+    discoverFiles(): void {
+        this.crawlerModuleStream = this.filesStream
+            .asObservable()
+            .map((dep: IResolverModule) => this.resolver.resolve(dep))
+            .map((fullPath: string) => {
+                console.log('Processing file [' + fullPath + ']');
+                this.stack.push({
+                    fullPath,
+                    processed: false
+                });
+                return <ICrawlerModule>{
+                    code: readFileSync(fullPath, this.encoding),
+                    fullPath
+                }
+            })
+            .share();
+    }
+
     getAST(module: ICrawlerModule): babelTypes.File { 
         return babylon.parse(module.code, <babylon.BabylonOptions>{
             allowImportExportEverywhere: true,
             sourceFilename: module.fullPath,
             sourceType: 'module'
         });  
-    }
-
-    discoverFiles(): void {
-        this.crawlerModuleStream = this.filesSubject
-            .asObservable()
-            .map((dep: IResolverModule) => this.resolver.resolve(dep))
-            .map((fullPath: string) => {
-                console.log('Processing file [' + fullPath + ']');
-                return <ICrawlerModule>{
-                    code: readFileSync(fullPath, this.encoding),
-                    fullPath,
-                    processed: false
-                }
-            })
-            .share();
     }
 
     getASTStream(): Observable<babelTypes.File> {
@@ -82,7 +91,8 @@ export default class Crawler {
     }
 
     start(): void { 
-        this.filesSubject.next(<IResolverModule>{
+        console.log('Crawler start');
+        this.filesStream.next(<IResolverModule>{
             id: this.entryPoint
         });
     }
