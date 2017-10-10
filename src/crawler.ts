@@ -66,6 +66,7 @@ export default class Crawler {
                     fullPath,
                     processed: false
                 });
+                
                 return <ICrawlerModule>{
                     code: readFileSync(fullPath, this.encoding),
                     fullPath
@@ -84,7 +85,10 @@ export default class Crawler {
 
     getASTStream(): Observable<babelTypes.File> {
         this.discoverFiles();
-        this.astStream = this.crawlerModuleStream.map((module: ICrawlerModule) => this.getAST(module));
+        this.astStream = this.crawlerModuleStream
+            .map((module: ICrawlerModule): babelTypes.File =>
+                this.getAST(module)
+            );
         this.discoverDependencies();
 
         return this.astStream;

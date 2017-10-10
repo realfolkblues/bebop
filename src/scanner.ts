@@ -133,6 +133,11 @@ export default class Scanner {
         console.log('Scanner start');
         
         this.astStreamInput = this.crawler.getASTStream();
+        this.astStreamInput.subscribe({
+            next: (ast: babelTypes.File) => {
+                console.info('Stack', this.crawler.stack);
+            }
+        });
         // this.setupASTListStream();
         // this.scanImport();
     }
