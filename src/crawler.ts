@@ -27,10 +27,11 @@ export default class Crawler {
     stack: IMonitorModule[] = []
 
     constructor(entryPoint: string, encoding: string = 'utf8') {
+        console.log('Crawler init');
         this.entryPoint = entryPoint;
         this.sourceDir = dirname(resolve(entryPoint));
         this.encoding = encoding;
-        console.log('Crawler init at [' + this.sourceDir + ']');
+        console.log('Folder ['  + this.sourceDir + ']');
     }
 
     discoverDependencies(): void {
@@ -39,9 +40,11 @@ export default class Crawler {
                 jscodeshift(ast)
                     .find(jscodeshift.ImportDeclaration)
                     .forEach((nodePath) => {
+                        console.log('Dependency [' + nodePath.value.source.value + ']');
+
                         const dependency: IResolverModule = {
                             id: nodePath.value.source.value,
-                            context: dirname(nodePath.value.loc.filename),
+                            context: dirname(nodePath.value.loc.filename)
                         };
 
                         this.filesStream.next(dependency);
