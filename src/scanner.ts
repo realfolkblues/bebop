@@ -6,38 +6,15 @@ import { isDeclaration, increaseReference } from './jscodeshift-util';
 import Crawler from './crawler';
 
 export default class Scanner {
-    astStreamInput: Observable<babelTypes.File>
     astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([])
     crawler: Crawler
+    inputStream: Observable<babelTypes.File>
 
     constructor(crawler: Crawler) { 
         console.log('Scanner init');
         this.crawler = crawler;
 
         this.start();
-    }
-
-    setupASTListStream(inputStream: Observable<babelTypes.File> = this.astStreamInput): void {
-        const astStreamScanned: Observable<babelTypes.File> = Observable
-            .from(inputStream)
-            .map((ast: babelTypes.File) => {
-                return this.scanDeclaration(ast);
-            });
-        
-        astStreamScanned.subscribe({
-            next: (ast: babelTypes.File) => {
-                const astList = this.astListStream.getValue();
-
-                astList.push(ast);
-                this.astListStream.next(astList);
-            },
-            error: (err: Error) => {
-                console.error(err);
-            },
-            complete: () => {
-                console.log('Scanning cross module: level 1 completed');
-            }
-        });
     }
 
     scanImport(): void {
@@ -129,15 +106,34 @@ export default class Scanner {
         return astCollection.getAST();
     }
 
+    setupASTListStream(inputStream: Observable<babelTypes.File> = this.inputStream): void {
+        const astStreamScanned: Observable<babelTypes.File> = Observable
+            .from(inputStream)
+            .map((ast: babelTypes.File) => {
+                return this.scanDeclaration(ast);
+            });
+        
+        astStreamScanned.subscribe({
+            next: (ast: babelTypes.File) => {
+                const astList = this.astListStream.getValue();
+
+                astList.push(ast);
+                this.astListStream.next(astList);
+            },
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('Scanning cross module: level 1 completed');
+            }
+        });
+    }
+
     start(): void {
         console.log('Scanner start');
         
-        this.astStreamInput = this.crawler.getASTStream();
-        this.astStreamInput.subscribe({
-            next: (ast: babelTypes.File) => {
-                console.info('Stack', this.crawler.stack);
-            }
-        });
+        this.inputStream = this.crawler.getASTStream();
+
         // this.setupASTListStream();
         // this.scanImport();
     }
