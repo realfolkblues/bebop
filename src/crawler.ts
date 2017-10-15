@@ -42,12 +42,10 @@ export default class Crawler {
                     .forEach((nodePath) => {
                         console.log('Found dependency [' + nodePath.value.source.value + ']');
 
-                        const dependency: IResolverModule = {
+                        this.filesStream.next(<IResolverModule>{
                             id: nodePath.value.source.value,
                             context: dirname(nodePath.value.loc.filename)
-                        };
-
-                        this.filesStream.next(dependency);
+                        });
                     });
             }, 
             error: (err: Error) => {
@@ -63,7 +61,7 @@ export default class Crawler {
         this.crawlerModuleStream = this.filesStream
             .asObservable()
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
-            .map((fullPath: string) => {
+            .map((fullPath: string): ICrawlerModule => {
                 console.log('Processing file [' + fullPath + ']');
                 this.stack.push({
                     fullPath,
