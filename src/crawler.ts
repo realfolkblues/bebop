@@ -40,7 +40,7 @@ export default class Crawler {
                 jscodeshift(ast)
                     .find(jscodeshift.ImportDeclaration)
                     .forEach((nodePath) => {
-                        console.log('Dependency [' + nodePath.value.source.value + ']');
+                        console.log('Found dependency [' + nodePath.value.source.value + ']');
 
                         const dependency: IResolverModule = {
                             id: nodePath.value.source.value,
@@ -89,9 +89,10 @@ export default class Crawler {
     getASTStream(): Observable<babelTypes.File> {
         this.discoverFiles();
         this.astStream = this.crawlerModuleStream
-            .map((module: ICrawlerModule): babelTypes.File =>
-                this.getAST(module)
-            );
+            .map((module: ICrawlerModule): babelTypes.File => {
+                console.log('Obtaining AST for [' + module.fullPath + ']');
+                return this.getAST(module);
+            });
         this.discoverDependencies();
 
         return this.astStream;
