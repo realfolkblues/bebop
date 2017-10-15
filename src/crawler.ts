@@ -88,16 +88,45 @@ export default class Crawler {
         this.discoverFiles();
         this.astStream = this.crawlerModuleStream
             .map((module: ICrawlerModule): babelTypes.File => {
-                console.log('Obtaining AST for [' + module.fullPath + ']');
-                return this.getAST(module);
+                if (typeof this.getMonitorModule(module.fullPath) === 'undefined') {
+                    console.log('Obtaining AST for [' + module.fullPath + ']');
+                    return this.getAST(module);
+                }
             });
         this.discoverDependencies();
 
         return this.astStream;
     }
 
+    getMonitorModule(fullPath: string): IMonitorModule {
+        return this.stack.find((monitorModule) => monitorModule.fullPath === fullPath);
+    }
+
     start(): void { 
         console.log('Crawler start');
+        const astStream = this.filesStream
+            .asObservable()
+            .map((dep: IResolverModule) => this.resolver.resolve(dep))
+            .map((fullPath: string): ICrawlerModule => {
+                console.log('Processing file [' + fullPath + ']');
+                                
+                return <ICrawlerModule>{
+                    code: readFileSync(fullPath, this.encoding),
+                    fullPath
+                }
+            })
+            .map((module: ICrawlerModule): babelTypes.File => {
+                console.log('Obtaining AST for [' + module.fullPath + ']');
+                return this.getAST(module);            
+            })
+            .share();
+        
+        astStream.subscribe({
+            next: (ast) => {
+                console.log('Detected AST');
+            }
+        });
+
         this.filesStream.next(<IResolverModule>{
             id: this.entryPoint
         });

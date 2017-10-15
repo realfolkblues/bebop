@@ -132,14 +132,7 @@ export default class Scanner {
     start(): void {
         console.log('Scanner start');
         
-        this.inputStream = this.crawler.getASTStream();
-
-        this.inputStream.subscribe({
-            next: (ast: babelTypes.File) => {
-                console.log('Scanner received AST');
-                console.info('Monitor content:', this.crawler.stack);
-            }
-        });
+        // this.inputStream = this.crawler.getASTStream();
         // this.setupASTListStream();
         // this.scanImport();
     }
