@@ -122,8 +122,23 @@ export default class Crawler {
             .share();
         
         astStream.subscribe({
-            next: (ast) => {
-                console.log('Detected AST');
+            next: (ast: babelTypes.File) => {
+                jscodeshift(ast)
+                    .find(jscodeshift.ImportDeclaration)
+                    .forEach((nodePath) => {
+                        console.log('Found dependency [' + nodePath.value.source.value + ']');
+
+                        this.filesStream.next(<IResolverModule>{
+                            id: nodePath.value.source.value,
+                            context: dirname(nodePath.value.loc.filename)
+                        });
+                    });
+            }, 
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('AST stream completed');
             }
         });
 
