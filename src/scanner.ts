@@ -132,7 +132,7 @@ export default class Scanner {
     start(): void {
         console.log('Scanner start');
         
-        // this.inputStream = this.crawler.getASTStream();
+        this.crawler.getASTStream();
         // this.setupASTListStream();
         // this.scanImport();
     }
