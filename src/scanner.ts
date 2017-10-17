@@ -3,18 +3,28 @@ import * as babelTypes from 'babel-types';
 import { BehaviorSubject, Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
 import { isDeclaration, increaseReference } from './jscodeshift-util';
-import Crawler from './crawler';
+import { default as Crawler, IASTModule} from './crawler';
+
+export interface IMonitorModule {
+    fullPath: string,
+    processed: boolean
+}
 
 export default class Scanner {
     astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([])
     crawler: Crawler
     inputStream: Observable<babelTypes.File>
+    stack: IMonitorModule[] = []
 
     constructor(crawler: Crawler) { 
         console.log('Scanner init');
         this.crawler = crawler;
 
         this.start();
+    }
+
+    getMonitorModule(fullPath: string): IMonitorModule {
+        return this.stack.find((monitorModule) => monitorModule.fullPath === fullPath);
     }
 
     scanImport(): void {
@@ -133,6 +143,17 @@ export default class Scanner {
         console.log('Scanner start');
         
         this.crawler.getASTStream();
+
+        this.crawler.astStream.subscribe({
+            next: (astModule: IASTModule) => {
+                console.log('Scanner received [' + astModule.fullPath + ']');
+                this.stack.push(<IMonitorModule>{
+                    fullPath: astModule.fullPath,
+                    processed: false
+                });
+                console.info('Stack', this.stack);
+            }
+        });
         // this.setupASTListStream();
         // this.scanImport();
     }

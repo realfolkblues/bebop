@@ -6,25 +6,24 @@ import * as babelTypes from 'babel-types';
 import * as jscodeshift from 'jscodeshift';
 import { IResolverModule, Resolver } from './resolver';
 
-export interface ICrawlerModule { 
+export interface IASTModule {
+    ast: babelTypes.File,
+    fullPath: string
+}
+
+export interface ICrawlerModule {
     code: string,
     fullPath: string
 }
 
-export interface IMonitorModule {
-    fullPath: string,
-    processed: boolean
-}
-
 export default class Crawler { 
-    astStream: Observable<babelTypes.File>
+    astStream: Observable<IASTModule>
     crawlerModuleStream: Observable<ICrawlerModule>
     encoding: string
     entryPoint: string
     filesStream: Subject<IResolverModule> = new Subject<IResolverModule>()
     resolver: Resolver = new Resolver()
     sourceDir: string
-    stack: IMonitorModule[] = []
 
     constructor(entryPoint: string, encoding: string = 'utf8') {
         console.log('Crawler init');
@@ -32,48 +31,6 @@ export default class Crawler {
         this.sourceDir = dirname(resolve(entryPoint));
         this.encoding = encoding;
         console.log('Folder ['  + this.sourceDir + ']');
-    }
-
-    discoverDependencies(): void {
-        this.astStream.subscribe({
-            next: (ast: babelTypes.File) => {
-                jscodeshift(ast)
-                    .find(jscodeshift.ImportDeclaration)
-                    .forEach((nodePath) => {
-                        console.log('Found dependency [' + nodePath.value.source.value + ']');
-
-                        this.filesStream.next(<IResolverModule>{
-                            id: nodePath.value.source.value,
-                            context: dirname(nodePath.value.loc.filename)
-                        });
-                    });
-            }, 
-            error: (err: Error) => {
-                console.error(err);
-            },
-            complete: () => {
-                console.log('AST stream completed');
-            }
-        });
-    }
-
-    discoverFiles(): void {
-        this.crawlerModuleStream = this.filesStream
-            .asObservable()
-            .map((dep: IResolverModule) => this.resolver.resolve(dep))
-            .map((fullPath: string): ICrawlerModule => {
-                console.log('Processing file [' + fullPath + ']');
-                this.stack.push({
-                    fullPath,
-                    processed: false
-                });
-                
-                return <ICrawlerModule>{
-                    code: readFileSync(fullPath, this.encoding),
-                    fullPath
-                }
-            })
-            .share();
     }
 
     getAST(module: ICrawlerModule): babelTypes.File { 
@@ -91,21 +48,25 @@ export default class Crawler {
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string): ICrawlerModule => {
                 console.log('Processing file [' + fullPath + ']');
-                                
+                
                 return <ICrawlerModule>{
                     code: readFileSync(fullPath, this.encoding),
                     fullPath
                 }
             })
-            .map((module: ICrawlerModule): babelTypes.File => {
+            .map((module: ICrawlerModule): IASTModule => {
                 console.log('Obtaining AST for [' + module.fullPath + ']');
-                return this.getAST(module);            
+                                
+                return <IASTModule>{
+                    ast: this.getAST(module),
+                    fullPath: module.fullPath
+                };
             })
             .share();
         
         this.astStream.subscribe({
-            next: (ast: babelTypes.File) => {
-                jscodeshift(ast)
+            next: (astModule: IASTModule) => {
+                jscodeshift(astModule.ast)
                     .find(jscodeshift.ImportDeclaration)
                     .forEach((nodePath) => {
                         console.log('Found dependency [' + nodePath.value.source.value + ']');
@@ -123,10 +84,6 @@ export default class Crawler {
                 console.log('AST stream completed');
             }
         });
-    }
-
-    getMonitorModule(fullPath: string): IMonitorModule {
-        return this.stack.find((monitorModule) => monitorModule.fullPath === fullPath);
     }
 
     start(): void { 
