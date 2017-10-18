@@ -6,9 +6,9 @@ import * as babelTypes from 'babel-types';
 import * as jscodeshift from 'jscodeshift';
 import { IResolverModule, Resolver } from './resolver';
 
-export interface IASTModule {
+export interface IASTModule extends ICrawlerModule {
     ast: babelTypes.File,
-    fullPath: string
+    processed: boolean
 }
 
 export interface ICrawlerModule {
@@ -73,7 +73,9 @@ export default class Crawler {
                                 
                 return <IASTModule>{
                     ast: this.getAST(module),
-                    fullPath: module.fullPath
+                    code: module.code,
+                    fullPath: module.fullPath,
+                    processed: false
                 };
             })
             .share();

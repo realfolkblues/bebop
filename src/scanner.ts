@@ -5,16 +5,11 @@ import * as jscodeshift from 'jscodeshift';
 import { isDeclaration, increaseReference } from './jscodeshift-util';
 import { default as Crawler, IASTModule} from './crawler';
 
-export interface IMonitorModule {
-    fullPath: string,
-    processed: boolean
-}
-
 export default class Scanner {
     astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([])
     crawler: Crawler
     inputStream: Observable<babelTypes.File>
-    stack: IMonitorModule[] = []
+    stack: IASTModule[] = []
 
     constructor(crawler: Crawler) { 
         console.log('Scanner init');
@@ -23,8 +18,8 @@ export default class Scanner {
         this.start();
     }
 
-    getMonitorModule(fullPath: string): IMonitorModule {
-        return this.stack.find((monitorModule) => monitorModule.fullPath === fullPath);
+    getMonitorModule(fullPath: string): IASTModule {
+        return this.stack.find((astModule: IASTModule) => astModule.fullPath === fullPath);
     }
 
     scanImport(): void {
@@ -147,10 +142,7 @@ export default class Scanner {
         this.crawler.astStream.subscribe({
             next: (astModule: IASTModule) => {
                 console.log('Scanner received [' + astModule.fullPath + ']');
-                this.stack.push(<IMonitorModule>{
-                    fullPath: astModule.fullPath,
-                    processed: false
-                });
+                this.stack.push(astModule);
                 console.info('Stack', this.stack);
             }
         });
