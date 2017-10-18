@@ -33,37 +33,7 @@ export default class Crawler {
         console.log('Folder ['  + this.sourceDir + ']');
     }
 
-    getAST(module: ICrawlerModule): babelTypes.File { 
-        return babylon.parse(module.code, <babylon.BabylonOptions>{
-            allowImportExportEverywhere: true,
-            sourceFilename: module.fullPath,
-            sourceType: 'module'
-        });  
-    }
-
-    getASTStream(): void {
-        console.log('Getting AST stream from crawler');
-        this.astStream = this.filesStream
-            .asObservable()
-            .map((dep: IResolverModule) => this.resolver.resolve(dep))
-            .map((fullPath: string): ICrawlerModule => {
-                console.log('Processing file [' + fullPath + ']');
-                
-                return <ICrawlerModule>{
-                    code: readFileSync(fullPath, this.encoding),
-                    fullPath
-                }
-            })
-            .map((module: ICrawlerModule): IASTModule => {
-                console.log('Obtaining AST for [' + module.fullPath + ']');
-                                
-                return <IASTModule>{
-                    ast: this.getAST(module),
-                    fullPath: module.fullPath
-                };
-            })
-            .share();
-        
+    discoverDependencies(): void {
         this.astStream.subscribe({
             next: (astModule: IASTModule) => {
                 jscodeshift(astModule.ast)
@@ -84,6 +54,43 @@ export default class Crawler {
                 console.log('AST stream completed');
             }
         });
+    }
+
+    discoverFiles(): void {
+        this.astStream = this.filesStream
+            .asObservable()
+            .map((dep: IResolverModule) => this.resolver.resolve(dep))
+            .map((fullPath: string): ICrawlerModule => {
+                console.log('Processing file [' + fullPath + ']');
+                
+                return <ICrawlerModule>{
+                    code: readFileSync(fullPath, this.encoding),
+                    fullPath
+                }
+            })
+            .map((module: ICrawlerModule): IASTModule => {
+                console.log('Obtaining AST for [' + module.fullPath + ']');
+                                
+                return <IASTModule>{
+                    ast: this.getAST(module),
+                    fullPath: module.fullPath
+                };
+            })
+            .share();
+    }
+
+    getAST(module: ICrawlerModule): babelTypes.File { 
+        return babylon.parse(module.code, <babylon.BabylonOptions>{
+            allowImportExportEverywhere: true,
+            sourceFilename: module.fullPath,
+            sourceType: 'module'
+        });  
+    }
+
+    getASTStream(): void {
+        console.log('Getting AST stream from crawler');
+        this.discoverFiles();        
+        this.discoverDependencies();
     }
 
     start(): void { 
