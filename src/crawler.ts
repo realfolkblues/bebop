@@ -18,7 +18,6 @@ export interface ICrawlerModule {
 
 export default class Crawler { 
     astStream: Observable<IASTModule>
-    crawlerModuleStream: Observable<ICrawlerModule>
     encoding: string
     entryPoint: string
     filesStream: Subject<IResolverModule> = new Subject<IResolverModule>()
@@ -33,8 +32,8 @@ export default class Crawler {
         console.log('Folder ['  + this.sourceDir + ']');
     }
 
-    discoverDependencies(): void {
-        this.astStream.subscribe({
+    discoverDependencies(astModuleStream: Observable<IASTModule>): void {
+        astModuleStream.subscribe({
             next: (astModule: IASTModule) => {
                 jscodeshift(astModule.ast)
                     .find(jscodeshift.ImportDeclaration)
@@ -56,8 +55,8 @@ export default class Crawler {
         });
     }
 
-    discoverFiles(): void {
-        this.astStream = this.filesStream
+    discoverFiles(): Observable<IASTModule> {
+        return this.filesStream
             .asObservable()
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
             .map((fullPath: string): ICrawlerModule => {
@@ -89,10 +88,12 @@ export default class Crawler {
         });  
     }
 
-    getASTStream(): void {
+    getASTStream(): Observable<IASTModule> {
         console.log('Getting AST stream from crawler');
-        this.discoverFiles();        
-        this.discoverDependencies();
+        const astModuleStream: Observable<IASTModule> = this.discoverFiles();
+        this.discoverDependencies(astModuleStream);
+
+        return astModuleStream;
     }
 
     start(): void { 

@@ -137,15 +137,16 @@ export default class Scanner {
     start(): void {
         console.log('Scanner start');
         
-        this.crawler.getASTStream();
+        const astModuleStream: Observable<IASTModule> = this.crawler.getASTStream();
 
-        this.crawler.astStream.subscribe({
+        astModuleStream.subscribe({
             next: (astModule: IASTModule) => {
                 console.log('Scanner received [' + astModule.fullPath + ']');
                 this.stack.push(astModule);
                 console.info('Stack', this.stack);
             }
         });
+
         // this.setupASTListStream();
         // this.scanImport();
     }
