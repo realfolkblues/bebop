@@ -50,7 +50,7 @@ export default class Crawler {
                 console.error(err);
             },
             complete: () => {
-                console.log('AST stream completed');
+                console.log('Discovery completed');
             }
         });
     }
