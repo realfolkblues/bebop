@@ -8,6 +8,7 @@ import { IResolverModule, Resolver } from './resolver';
 
 export interface IASTModule extends ICrawlerModule {
     ast: babelTypes.File,
+    deps: IResolverModule[],
     processed: boolean
 }
 
@@ -55,7 +56,7 @@ export default class Crawler {
         });
     }
 
-    discoverFiles(): Observable<IASTModule> {
+    discover(): Observable<IASTModule> {
         return this.filesStream
             .asObservable()
             .map((dep: IResolverModule) => this.resolver.resolve(dep))
@@ -77,6 +78,24 @@ export default class Crawler {
                     processed: false
                 };
             })
+            .map((astModule: IASTModule): IASTModule => {
+                const deps: IResolverModule[] = [];
+
+                jscodeshift(astModule.ast)
+                    .find(jscodeshift.ImportDeclaration)
+                    .forEach((nodePath) => {
+                        console.log('Found dependency [' + nodePath.value.source.value + ']');
+
+                        deps.push(<IResolverModule>{
+                            id: nodePath.value.source.value,
+                            context: dirname(nodePath.value.loc.filename)
+                        });
+                    });
+
+                astModule.deps = deps;
+
+                return astModule;                
+            })
             .share();
     }
 
@@ -86,14 +105,6 @@ export default class Crawler {
             sourceFilename: module.fullPath,
             sourceType: 'module'
         });  
-    }
-
-    getASTStream(): Observable<IASTModule> {
-        console.log('Getting AST stream from crawler');
-        const astModuleStream: Observable<IASTModule> = this.discoverFiles();
-        this.discoverDependencies(astModuleStream);
-
-        return astModuleStream;
     }
 
     start(): void { 

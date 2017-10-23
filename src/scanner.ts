@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, Subject } from 'rxjs/Rx';
 import * as jscodeshift from 'jscodeshift';
 import { isDeclaration, increaseReference } from './jscodeshift-util';
 import { default as Crawler, IASTModule} from './crawler';
+import { IResolverModule } from './resolver';
 
 export default class Scanner {
     astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([])
@@ -16,6 +17,13 @@ export default class Scanner {
         this.crawler = crawler;
 
         this.start();
+    }
+
+    getASTStream(): Observable<IASTModule> {
+        console.log('Getting AST stream from crawler');
+        const astModuleStream: Observable<IASTModule> = this.crawler.discover();
+
+        return astModuleStream;
     }
 
     getMonitorModule(fullPath: string): IASTModule {
@@ -115,12 +123,20 @@ export default class Scanner {
     start(): void {
         console.log('Scanner start');
         
-        const astModuleStream: Observable<IASTModule> = this.crawler.getASTStream();
+        const astModuleStream: Observable<IASTModule> = this.getASTStream();
 
         astModuleStream.subscribe({
             next: (astModule: IASTModule) => {
                 console.log('Scanner received [' + astModule.fullPath + ']');
+                console.log('== AST MODULE BEGIN');
+                console.info(astModule);
+                console.log('== AST MODULE END');
                 this.stack.push(astModule);
+                console.log('Stack contains [' + this.stack.length + '] modules');
+                console.log('----> Perform some operations here <----');
+                astModule.deps.forEach((dep: IResolverModule) => 
+                    this.crawler.filesStream.next(dep)
+                );
             }
         });
     }
