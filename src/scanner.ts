@@ -127,10 +127,13 @@ export default class Scanner {
 
     start(): void {
         console.log('Scanner start');
-        
         const astModuleStream: Observable<IASTModule> = this.getASTStream();
 
-        astModuleStream.subscribe({
+        astModuleStream
+        .takeWhile((astModule: IASTModule) =>
+            this.stack.length === 0 || this.stack.some((item) => !item.processed)
+        )
+        .subscribe({
             next: (astModule: IASTModule) => {
                 console.log('Scanner received [' + astModule.fullPath + ']');
                 this.stack.push(<IMonitorModule>{
@@ -146,6 +149,12 @@ export default class Scanner {
                 console.log('---- STACK  BEGIN ----------');
                 console.info(this.stack);
                 console.log('---- STACK  END __----------');
+            }, 
+            error: (err: Error) => {
+                console.error(err);
+            },
+            complete: () => {
+                console.log('Scanner completed');
             }
         });
     }
