@@ -6,11 +6,16 @@ import { isDeclaration, increaseReference } from './jscodeshift-util';
 import { default as Crawler, IASTModule} from './crawler';
 import { IResolverModule } from './resolver';
 
+export interface IMonitorModule {
+    fullPath: string,
+    processed: boolean
+}
+
 export default class Scanner {
     astListStream: BehaviorSubject<babelTypes.File[]> = new BehaviorSubject([])
     crawler: Crawler
     inputStream: Observable<babelTypes.File>
-    stack: IASTModule[] = []
+    stack: IMonitorModule[] = []
 
     constructor(crawler: Crawler) { 
         console.log('Scanner init');
@@ -128,16 +133,29 @@ export default class Scanner {
         astModuleStream.subscribe({
             next: (astModule: IASTModule) => {
                 console.log('Scanner received [' + astModule.fullPath + ']');
-                console.log('== AST MODULE BEGIN');
-                console.info(astModule);
-                console.log('== AST MODULE END');
-                this.stack.push(astModule);
+                this.stack.push(<IMonitorModule>{
+                    fullPath: astModule.fullPath,
+                    processed: false
+                });
                 console.log('Stack contains [' + this.stack.length + '] modules');
-                console.log('----> Perform some operations here <----');
+                astModule.ast = this.scanDeclaration(astModule).ast;
                 astModule.deps.forEach((dep: IResolverModule) => 
                     this.crawler.filesStream.next(dep)
                 );
+                this.updateStack(astModule.fullPath);
+                console.log('---- STACK  BEGIN ----------');
+                console.info(this.stack);
+                console.log('---- STACK  END __----------');
             }
         });
     }
+
+    updateStack(fullPath: string): void {
+        this.stack = this.stack.map((item: IMonitorModule) => {
+            if (item.fullPath === fullPath) {
+                item.processed = true;
+            }
+            return item;
+        });
+    } 
 }
