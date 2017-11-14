@@ -33,29 +33,6 @@ export default class Crawler {
         console.log('Folder ['  + this.sourceDir + ']');
     }
 
-    discoverDependencies(astModuleStream: Observable<IASTModule>): void {
-        astModuleStream.subscribe({
-            next: (astModule: IASTModule) => {
-                jscodeshift(astModule.ast)
-                    .find(jscodeshift.ImportDeclaration)
-                    .forEach((nodePath) => {
-                        console.log('Found dependency [' + nodePath.value.source.value + ']');
-
-                        this.filesStream.next(<IResolverModule>{
-                            id: nodePath.value.source.value,
-                            context: dirname(nodePath.value.loc.filename)
-                        });
-                    });
-            }, 
-            error: (err: Error) => {
-                console.error(err);
-            },
-            complete: () => {
-                console.log('Discovery completed');
-            }
-        });
-    }
-
     discover(): Observable<IASTModule> {
         return this.filesStream
             .asObservable()
