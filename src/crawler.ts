@@ -1,9 +1,9 @@
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { Observable, Subject } from 'rxjs/Rx';
+import * as recast from 'recast';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
-import * as jscodeshift from 'jscodeshift';
 import { IResolverModule, Resolver } from './resolver';
 
 export interface IASTModule extends ICrawlerModule {
@@ -58,16 +58,18 @@ export default class Crawler {
             .map((astModule: IASTModule): IASTModule => {
                 const deps: IResolverModule[] = [];
 
-                jscodeshift(astModule.ast)
-                    .find(jscodeshift.ImportDeclaration)
-                    .forEach((nodePath) => {
+                recast.visit(astModule.ast, {
+                    visitImportDeclaration: (nodePath) => {
                         console.log('Found dependency [' + nodePath.value.source.value + ']');
 
                         deps.push(<IResolverModule>{
                             id: nodePath.value.source.value,
                             context: dirname(nodePath.value.loc.filename)
                         });
-                    });
+                        
+                        return false;
+                    }
+                });
 
                 astModule.deps = deps;
 
