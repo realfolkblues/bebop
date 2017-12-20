@@ -145,7 +145,7 @@ export default class Scanner {
 
                     console.log('---- STACK  BEGIN ----------');
                     console.info(this.stack);
-                    console.log('---- STACK  END __----------');
+                    console.log('---- STACK  END ------------');
 
                     if (this.stack.every((item) => item.processed)) {
                         this.crawler.filesStream.complete();
