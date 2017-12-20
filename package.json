@@ -31,13 +31,13 @@
   },
   "homepage": "https://github.com/ilmente/tree-shaking-study#readme",
   "dependencies": {
-    "acorn": "^5.2.1",
     "babel-types": "6.25.0",
     "babylon": "6.17.4",
     "chalk": "2.0.1",
     "debug": "2.6.8",
     "escape-string-regexp": "^1.0.5",
     "jscodeshift": "0.3.32",
+    "recast": "0.13.0",
     "rxjs": "5.4.2",
     "tslint": "^5.7.0"
   },
