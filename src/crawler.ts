@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { Observable, Subject } from 'rxjs/Rx';
 import * as recast from 'recast';
+import { visitAST } from './recast-util';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
 import { IResolverModule, Resolver } from './resolver';
@@ -69,7 +70,7 @@ export default class Crawler {
                         
                         return false;
                     }
-                });
+                });                
 
                 astModule.deps = deps;
 
