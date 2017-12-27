@@ -58,7 +58,7 @@ export default class Crawler {
             })
             .map((astModule: IASTModule): IASTModule => {
                 let deps: IResolverModule[] = [];
-                const cb = (nodePath): void => {
+                const importDeclarationCallback = (nodePath): void => {
                     console.log('Found dependency [' + nodePath.value.source.value + ']');
                     deps.push(<IResolverModule>{
                         id: nodePath.value.source.value,
@@ -66,7 +66,7 @@ export default class Crawler {
                     });
                 };
 
-                visitAST(astModule.ast, 'ImportDeclaration', cb);
+                visitAST(astModule.ast, 'ImportDeclaration', importDeclarationCallback);
 
                 astModule.deps = deps;
 
