@@ -57,20 +57,16 @@ export default class Crawler {
                 };
             })
             .map((astModule: IASTModule): IASTModule => {
-                const deps: IResolverModule[] = [];
+                let deps: IResolverModule[] = [];
+                const cb = (nodePath): void => {
+                    console.log('Found dependency [' + nodePath.value.source.value + ']');
+                    deps.push(<IResolverModule>{
+                        id: nodePath.value.source.value,
+                        context: dirname(nodePath.value.loc.filename)
+                    });
+                };
 
-                recast.visit(astModule.ast, {
-                    visitImportDeclaration: (nodePath) => {
-                        console.log('Found dependency [' + nodePath.value.source.value + ']');
-
-                        deps.push(<IResolverModule>{
-                            id: nodePath.value.source.value,
-                            context: dirname(nodePath.value.loc.filename)
-                        });
-                        
-                        return false;
-                    }
-                });                
+                visitAST(astModule.ast, 'ImportDeclaration', cb);
 
                 astModule.deps = deps;
 
