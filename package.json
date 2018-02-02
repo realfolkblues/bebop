@@ -1,7 +1,7 @@
 {
-  "name": "tree-shaking-study",
-  "version": "0.0.2",
-  "description": "Javascript ES2015 tree shaking study",
+  "name": "bebop",
+  "version": "0.1.0",
+  "description": "Javascript ES2015 tree shaking project",
   "main": "index.js",
   "scripts": {
     "watch": "tsc -w",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://ilmente@github.com/ilmente/tree-shaking-study.git"
+    "url": "https://github.com/realfolkblues/bebop.git"
   },
   "contributors": [
     {
@@ -27,16 +27,17 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ilmente/tree-shaking-study/issues"
+    "url": "https://github.com/realfolkblues/bebop/issues"
   },
-  "homepage": "https://github.com/ilmente/tree-shaking-study#readme",
+  "homepage": "https://github.com/realfolkblues/bebop#readme",
   "dependencies": {
     "babel-types": "6.25.0",
     "babylon": "6.17.4",
-    "chalk": "2.0.1",
+    "chalk": "2.1.0",
     "debug": "2.6.8",
     "escape-string-regexp": "^1.0.5",
-    "jscodeshift": "0.3.32",
+    "jscodeshift": "./jscodeshift",
+    "ramda": "^0.25.0",
     "recast": "0.13.0",
     "rxjs": "5.4.2",
     "tslint": "^5.7.0"
@@ -45,6 +46,6 @@
     "@types/babylon": "6.16.1",
     "@types/node": "7.0.22",
     "iconv-lite": "0.4.18",
-    "typescript": "2.4.2"
+    "typescript": "2.6.2"
   }
 }

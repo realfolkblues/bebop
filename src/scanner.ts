@@ -20,57 +20,48 @@ export default class Scanner {
     constructor(crawler: Crawler) { 
         console.log('Scanner init');
         this.crawler = crawler;
-
-        this.start();
     }
 
     getASTStream(): Observable<IASTModule> {
         console.log('Getting AST stream from crawler');
         const astModuleStream: Observable<IASTModule> = this.crawler.discover();
 
+        const astModuleStreamObserver = astModuleStream
+            .subscribe({
+                next: (astModule: IASTModule) => {
+                    console.log('Scanner received [' + astModule.fullPath + ']');
+
+                    this.stack.push(<IMonitorModule>{
+                        fullPath: astModule.fullPath,
+                        processed: false
+                    });
+
+                    console.log('Stack contains [' + this.stack.length + '] modules');
+
+                    astModule.ast = this.scanDeclaration(astModule).ast;
+                    astModule.deps.forEach((dep: IResolverModule) =>
+                        this.crawler.filesStream.next(dep)
+                    );
+                    this.updateStack(astModule.fullPath);
+
+                    console.log('---- STACK  BEGIN ----------');
+                    console.info(this.stack);
+                    console.log('---- STACK  END ------------');
+
+                    if (this.stack.every((item) => item.processed)) {
+                        this.crawler.filesStream.complete();
+                    }
+                },
+                error: (err: Error) => {
+                    console.error(err);
+                },
+                complete: () => {
+                    console.log('Scanner completed');
+                }
+            });
+
         return astModuleStream;
     }
-
-    // scanImport(): void {
-    //     this.astListStream.subscribe({
-    //         next: ((astList: babelTypes.File[]) => {
-    //             if (astList && astList.length > 1) {
-    //                 console.info('Processing list of ' + astList.length + ' AST...');
-    //                 const listMonitor: Observable<babelTypes.File> = Observable.from(astList);
-
-    //                 listMonitor.subscribe({
-    //                     next: (ast: babelTypes.File) => {
-    //                         jscodeshift(ast)
-    //                             .find(jscodeshift.ImportDeclaration)
-    //                             .forEach(nodePath => {
-    //                                 const importedModuleFullPath: string = resolve(this.crawler.sourceDir, nodePath.node.source.value + '.js');
-    //                                 console.info('Found imported module [' + importedModuleFullPath + ']');
-
-    //                                 const importedModuleAst: babelTypes.File = astList
-    //                                     .find((moduleAst: babelTypes.File) => {
-    //                                         return moduleAst[0].value.program.loc.filename === importedModuleFullPath;
-    //                                     });
-
-    //                                 this.scanDeclaration(importedModuleAst, importedModuleFullPath);
-    //                             });
-    //                     },
-    //                     error: (err: Error) => {
-    //                         console.error(err);
-    //                     },
-    //                     complete: () => {
-    //                         console.log('List monitor stream completed');
-    //                     }
-    //                 });
-    //             }
-    //         }),
-    //         error: (err: Error) => {
-    //             console.error(err);
-    //         },
-    //         complete: () => {
-    //             console.log('Scanning cross module: level 2 completed');
-    //         }
-    //     });
-    // }
 
     /**
      * Add number of references to declarations in a given AST
@@ -123,41 +114,7 @@ export default class Scanner {
 
     start(): void {
         console.log('Scanner start');
-        const astModuleStream: Observable<IASTModule> = this.getASTStream();
-
-        const astModuleStreamObserver = astModuleStream
-            .subscribe({
-                next: (astModule: IASTModule) => {
-                    console.log('Scanner received [' + astModule.fullPath + ']');
-
-                    this.stack.push(<IMonitorModule>{
-                        fullPath: astModule.fullPath,
-                        processed: false
-                    });
-
-                    console.log('Stack contains [' + this.stack.length + '] modules');
-
-                    astModule.ast = this.scanDeclaration(astModule).ast;
-                    astModule.deps.forEach((dep: IResolverModule) => 
-                        this.crawler.filesStream.next(dep)
-                    );
-                    this.updateStack(astModule.fullPath);
-
-                    console.log('---- STACK  BEGIN ----------');
-                    console.info(this.stack);
-                    console.log('---- STACK  END ------------');
-
-                    if (this.stack.every((item) => item.processed)) {
-                        this.crawler.filesStream.complete();
-                    }
-                }, 
-                error: (err: Error) => {
-                    console.error(err);
-                },
-                complete: () => {
-                    console.log('Scanner completed');
-                }
-            });
+        this.crawler.start();
     }
 
     updateStack(fullPath: string): void {
