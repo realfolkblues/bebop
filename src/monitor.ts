@@ -27,6 +27,6 @@ export default class Monitor<T> {
     }
 
     get isConsumed(): boolean { 
-        return Array.from(this.registry.values()).every((isConsumed: boolean) => true);
+        return Array.from(this.registry.values()).every((isConsumed: boolean) => !!isConsumed);
     }
 }
