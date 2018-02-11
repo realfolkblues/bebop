@@ -7,12 +7,10 @@ import Crawler, { IModule } from './crawler';
 
 export default class Evaluator extends Stream<IModule> {
     crawler: Crawler
-    evaluatedAstSubject: Subject<File>
 
     constructor(logger: Logger, crawler: Crawler) {
         super(logger, 'Evaluating modules');
         this.crawler = crawler;
-        this.evaluatedAstSubject = new Subject<File>();
     }
 
     init(): void { 
