@@ -1,45 +1,41 @@
 import * as jscodeshift from 'jscodeshift';
 import { Observable, Subject } from 'rxjs/Rx';
 import { File } from 'babel-types';
-import Scanner from './scanner';
-import { IASTModule } from './crawler';
+import Stream from './stream';
+import Logger from './logger';
+import Crawler, { IModule } from './crawler';
 
-export default class Evaluator {
-    scanner: Scanner
+export default class Evaluator extends Stream<IModule> {
+    crawler: Crawler
     evaluatedAstSubject: Subject<File>
 
-    constructor(scanner: Scanner) {
-        this.scanner = scanner;
+    constructor(logger: Logger, crawler: Crawler) {
+        super(logger, 'Evaluating modules');
+        this.crawler = crawler;
         this.evaluatedAstSubject = new Subject<File>();
     }
 
-    getEvaluatedASTStream() {
-        const astModuleStream: Observable<IASTModule> = this.scanner.getASTStream();
-
-        const astModuleStreamObserver = astModuleStream
-            .subscribe({
-                next: (astModule: IASTModule) => this.enrich(astModule.ast),
-                error: (err: Error) => console.error(err),
-                complete: () => console.log('Evaluation completed')
-            });
-        
-        return astModuleStream;
+    init(): void { 
+        this.crawler.init();
     }
 
-    start(): void {
-        this.scanner.start();
+    get(): Observable<IModule> { 
+        return this.crawler
+            .get()
+            .map((module: IModule) => this.enrich(module));
     }
 
-    enrich(ast: File): File {
-        console.log('===== EVALUATING FILE =====');
-        const collection = jscodeshift(ast);
+    enrich(module: IModule): IModule {
+        this.logger.log(`Evaluating`, module.fullPath);
+
+        const collection = jscodeshift(module.ast);
         collection.markFunctions();
         collection.shake();
 
-        console.log(collection.toSource());
-        console.log('===== END EVALUATING FILE =====');
+        this.logger.log(`Output:`, collection.toSource());
+        this.logger.log(`Evaluation DONE`);
 
-        return collection.getAST();
+        return module;
     }
 
 }

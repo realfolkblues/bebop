@@ -1,33 +1,43 @@
-
 import * as fs from 'fs';
-import { isAbsolute, join, dirname, sep as separator } from 'path';
+import { isAbsolute, join, dirname, basename, sep as separator } from 'path';
 
-export interface IResolverModule {
+const defaultCwd = process.cwd();
+
+export interface IFileContext {
     id: string,
-    context?: string
+    base: string
 }
 
-export class Resolver {
-    cwd: string
+export interface IFileInfo {
+    context: IFileContext
+    fullPath: string
+}
 
-    constructor(cwd = process.cwd()) {
+export default class Resolver {
+    readonly cwd: string
+
+    constructor(cwd: string = defaultCwd) {
         this.cwd = cwd;
     }
 
-    resolve(module: IResolverModule): string {
-        if (isAbsolute(module.id) || this.isDependencyModule(module.id)) {
-            return require.resolve(module.id);
+    resolve(context: IFileContext): IFileInfo {
+        if (isAbsolute(context.id) || this.isNodeModule(context.id)) {
+            const modulePath = require.resolve(context.id);
+            context.id = basename(modulePath);
+            context.base = dirname(modulePath);
         }
 
-        if (!module.context) {
-            module.context = this.cwd;
+        if (!context.base) {
+            context.base = this.cwd;
         }
 
-        const fullPath = join(module.context, module.id);
-        return require.resolve(fullPath);
+        return <IFileInfo>Object.assign({
+            context,
+            fullPath: require.resolve(join(context.base, context.id))
+        });
     }
 
-    isDependencyModule(id) {
+    isNodeModule(id) {
         return (
             id.indexOf('@') === 0
             || id.indexOf(separator) < 0
