@@ -4,7 +4,7 @@ import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
 import Monitor from './monitor';
-import { visitAST } from './recast-util';
+import { parseCode, visitAST } from './recast-util';
 import * as babylon from 'babylon';
 import * as babelTypes from 'babel-types';
 import Resolver, { IFileContext, IFileInfo } from './resolver';
@@ -100,11 +100,13 @@ export default class Crawler extends Stream<IModule> {
     }
 
     protected getAST(file: IFile): babelTypes.File {
-        return babylon.parse(file.content, <babylon.BabylonOptions>{
-            allowImportExportEverywhere: true,
-            sourceFilename: file.fullPath,
-            sourceType: 'module'
-        });
+        // return babylon.parse(file.content, <babylon.BabylonOptions>{
+        //     allowImportExportEverywhere: true,
+        //     sourceFilename: file.fullPath,
+        //     sourceType: 'module'
+        // });
+
+        return parseCode(file.content);
     }
 
     protected getModule(partialModule: IPartialModule): IModule { 
