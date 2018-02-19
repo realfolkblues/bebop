@@ -38,7 +38,7 @@
     "escape-string-regexp": "^1.0.5",
     "jscodeshift": "git+https://git@github.com/ilmente/jscodeshift.git",
     "ramda": "^0.25.0",
-    "recast": "0.13.0",
+    "recast": "0.13.2",
     "rxjs": "5.4.2",
     "tslint": "^5.7.0"
   },
