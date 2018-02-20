@@ -4,9 +4,9 @@ import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
 import Monitor from './monitor';
-import { parseCode, visitAST } from './recast-util';
-import * as babylon from 'babylon';
-import * as babelTypes from 'babel-types';
+import * as acorn from 'acorn';
+import * as estree from 'estree';
+import { visitAST } from './recast-util';
 import Resolver, { IFileContext, IFileInfo } from './resolver';
 
 export interface IFile extends IFileInfo {
@@ -14,7 +14,7 @@ export interface IFile extends IFileInfo {
 }
 
 export interface IPartialModule extends IFile {
-    ast: babelTypes.File
+    ast: estree.Program
 }
 
 export interface IModule extends IPartialModule {
@@ -99,14 +99,14 @@ export default class Crawler extends Stream<IModule> {
         });
     }
 
-    protected getAST(file: IFile): babelTypes.File {
-        // return babylon.parse(file.content, <babylon.BabylonOptions>{
-        //     allowImportExportEverywhere: true,
-        //     sourceFilename: file.fullPath,
-        //     sourceType: 'module'
-        // });
-
-        return parseCode(file.content);
+    protected getAST(file: IFile): estree.Program {
+        return acorn.parse(file.content, <acorn.Options>{
+            ecmaVersion: 6,
+            sourceType: 'module',
+            allowImportExportEverywhere: true,
+            locations: true,
+            directSourceFile: file.fullPath
+        });
     }
 
     protected getModule(partialModule: IPartialModule): IModule { 
