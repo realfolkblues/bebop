@@ -13,6 +13,7 @@ Temporary Items
 GPATH
 GRTAGS
 GTAGS
+.vscode
 
 # OS
 .DS_Store
