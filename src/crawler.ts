@@ -110,15 +110,13 @@ export default class Crawler extends Stream<IModule> {
     }
 
     protected getModule(partialModule: IPartialModule): IModule {
-        this.logger.debug('Getting module');
-
         const deps: IFileContext[] = [];
 
         const importDeclarationCallback = (nodePath): void => {
-            if (nodePath && nodePath.value && nodePath.value.source.value && nodePath.value.loc.filename) {
+            if (nodePath && nodePath.value && nodePath.value.source && nodePath.value.source.value && nodePath.value.loc && nodePath.value.loc.source) {
                 deps.push({
                     id: nodePath.value.source.value,
-                    base: dirname(nodePath.value.loc.filename)
+                    base: dirname(nodePath.value.loc.source)
                 });
             }
         };
