@@ -105,18 +105,22 @@ export default class Crawler extends Stream<IModule> {
             sourceType: 'module',
             allowImportExportEverywhere: true,
             locations: true,
-            directSourceFile: file.fullPath
+            sourceFile: file.fullPath
         });
     }
 
-    protected getModule(partialModule: IPartialModule): IModule { 
+    protected getModule(partialModule: IPartialModule): IModule {
+        this.logger.debug('Getting module');
+
         const deps: IFileContext[] = [];
 
         const importDeclarationCallback = (nodePath): void => {
-            deps.push({
-                id: nodePath.value.source.value,
-                base: dirname(nodePath.value.loc.filename)
-            });
+            if (nodePath && nodePath.value && nodePath.value.source.value && nodePath.value.loc.filename) {
+                deps.push({
+                    id: nodePath.value.source.value,
+                    base: dirname(nodePath.value.loc.filename)
+                });
+            }
         };
 
         visitAST(partialModule.ast, 'ImportDeclaration', importDeclarationCallback);
@@ -129,7 +133,7 @@ export default class Crawler extends Stream<IModule> {
 
         return <IModule>Object.assign({}, partialModule, {
             deps
-        });          
+        });
     }
 
     protected recurse(module: IModule): IModule { 
