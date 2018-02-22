@@ -4,9 +4,9 @@ import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
 import Monitor from './monitor';
+import * as acorn from 'acorn';
+import * as estree from 'estree';
 import { visitAST } from './recast-util';
-import * as babylon from 'babylon';
-import * as babelTypes from 'babel-types';
 import Resolver, { IFileContext, IFileInfo } from './resolver';
 
 export interface IFile extends IFileInfo {
@@ -14,7 +14,7 @@ export interface IFile extends IFileInfo {
 }
 
 export interface IPartialModule extends IFile {
-    ast: babelTypes.File
+    ast: estree.Program
 }
 
 export interface IModule extends IPartialModule {
@@ -99,22 +99,26 @@ export default class Crawler extends Stream<IModule> {
         });
     }
 
-    protected getAST(file: IFile): babelTypes.File {
-        return babylon.parse(file.content, <babylon.BabylonOptions>{
+    protected getAST(file: IFile): estree.Program {
+        return acorn.parse(file.content, <acorn.Options>{
+            ecmaVersion: 6,
+            sourceType: 'module',
             allowImportExportEverywhere: true,
-            sourceFilename: file.fullPath,
-            sourceType: 'module'
+            locations: true,
+            sourceFile: file.fullPath
         });
     }
 
-    protected getModule(partialModule: IPartialModule): IModule { 
+    protected getModule(partialModule: IPartialModule): IModule {
         const deps: IFileContext[] = [];
 
         const importDeclarationCallback = (nodePath): void => {
-            deps.push({
-                id: nodePath.value.source.value,
-                base: dirname(nodePath.value.loc.filename)
-            });
+            if (nodePath && nodePath.value && nodePath.value.source && nodePath.value.source.value && nodePath.value.loc && nodePath.value.loc.source) {
+                deps.push({
+                    id: nodePath.value.source.value,
+                    base: dirname(nodePath.value.loc.source)
+                });
+            }
         };
 
         visitAST(partialModule.ast, 'ImportDeclaration', importDeclarationCallback);
@@ -127,7 +131,7 @@ export default class Crawler extends Stream<IModule> {
 
         return <IModule>Object.assign({}, partialModule, {
             deps
-        });          
+        });
     }
 
     protected recurse(module: IModule): IModule { 

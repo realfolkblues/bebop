@@ -1,6 +1,5 @@
 import * as jscodeshift from 'jscodeshift';
 import { Observable, Subject } from 'rxjs/Rx';
-import { File } from 'babel-types';
 import Stream from './stream';
 import Logger from './logger';
 import Crawler, { IModule } from './crawler';

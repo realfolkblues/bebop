@@ -1,7 +1,7 @@
-import * as babelTypes from 'babel-types';
+import * as estree from 'estree';
 import * as recast from 'recast';
 
-export function visitAST(ast: babelTypes.File, nodeType: string = '', cb: Function, deep: boolean = false): babelTypes.File {
+export function visitAST(ast: estree.Program, nodeType: string = '', cb: Function, deep: boolean = false): estree.Program {
     let visitor: Object = {};
 
     if (nodeType.length > 0 && cb && typeof cb === 'function') {
