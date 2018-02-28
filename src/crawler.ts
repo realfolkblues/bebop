@@ -6,7 +6,7 @@ import Logger from './logger';
 import Monitor from './monitor';
 import * as acorn from 'acorn';
 import * as estree from 'estree';
-import { visitAST } from './recast-util';
+import { visitAST } from './util';
 import Resolver, { IFileContext, IFileInfo } from './resolver';
 
 export interface IFile extends IFileInfo {

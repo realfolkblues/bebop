@@ -3,7 +3,7 @@ import Monitor from './monitor';
 import Resolver, { IFileContext } from './resolver';
 import Crawler from './crawler';
 import Evaluator from './evaluator';
-import registerUtils from './jscodeshift-util';
+import registerUtils from './util';
 
 console.log('== BEGIN ============================================================');
 
