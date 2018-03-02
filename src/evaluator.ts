@@ -1,4 +1,6 @@
 import * as jscodeshift from 'jscodeshift';
+import * as estree from 'estree';
+import { NodeCollection } from './nodeCollection';
 import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
@@ -23,13 +25,16 @@ export default class Evaluator extends Stream<IModule> {
     }
 
     enrich(module: IModule): IModule {
-        this.logger.log(`Evaluating`, module.fullPath);
+        this.logger.log(`Evaluating ${module.fullPath}`);
 
-        const collection = jscodeshift(module.ast);
-        collection.markFunctions();
-        collection.shake();
+        const collection: NodeCollection = new NodeCollection(module.ast);
+        let astContent: estree.Node[] = collection.get();
 
-        this.logger.log(`Output:`, collection.toSource());
+        // const collection = jscodeshift(module.ast);
+        // collection.markFunctions();
+        // collection.shake();
+
+        // this.logger.log(`Output: \n\r${collection.toSource()}`);
         this.logger.log(`Evaluation DONE`);
 
         return module;
