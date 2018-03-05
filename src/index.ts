@@ -3,11 +3,8 @@ import Monitor from './monitor';
 import Resolver, { IFileContext } from './resolver';
 import Crawler from './crawler';
 import Evaluator from './evaluator';
-import registerUtils from './util';
 
 console.log('== BEGIN ============================================================');
-
-registerUtils();
 
 const cwd = process.cwd();
 const entryPoint = process.env.npm_config_target_path || './examples/fn/01/index.js';
