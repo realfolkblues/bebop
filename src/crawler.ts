@@ -6,7 +6,7 @@ import Logger from './logger';
 import Monitor from './monitor';
 import * as acorn from 'acorn';
 import * as estree from 'estree';
-import { visitAST } from './util';
+import { visitAST, getDependencyId, getDependencyFolder } from './util';
 import Resolver, { IFileContext, IFileInfo } from './resolver';
 
 export interface IFile extends IFileInfo {
@@ -113,10 +113,13 @@ export default class Crawler extends Stream<IModule> {
         const deps: IFileContext[] = [];
 
         const importDeclarationCallback = (node): void => {
-            if (node && node.source && node.source.value && node.loc && node.loc.source) {
+            const dependencyId = getDependencyId(node);
+            const dependencyFolder = getDependencyFolder(node);
+
+            if (dependencyId.length > 0 && dependencyFolder.length > 0) {
                 deps.push({
-                    id: node.source.value,
-                    base: dirname(node.loc.source)
+                    id: dependencyId,
+                    base: dependencyFolder
                 });
             }
         };
