@@ -1,14 +1,14 @@
 import { dirname } from 'path';
 import * as estree from 'estree';
-import { traverse } from 'estraverse';
+import { traverse, VisitorOption } from 'estraverse';
 
-export function visitAST(ast: estree.Program, nodeType: string = '', cb: Function): estree.Program {
+export function visitAST(ast: estree.Program, nodeType: string = '', cb: Function, filter: boolean = true): estree.Program {
     let visitor: Object = {};
 
     if (nodeType.length > 0 && cb && typeof cb === 'function') {
         traverse(ast, {
-            enter: (node, parent) => {
-                if (node.type === nodeType) {
+            enter: (node: estree.Node, parent: estree.Node): void => {
+                if ((node.type === nodeType || nodeType === '') && filter) {
                     cb(node, parent);
                 }
             }
@@ -18,8 +18,8 @@ export function visitAST(ast: estree.Program, nodeType: string = '', cb: Functio
     return ast;
 }
 
-export function getDependencyId(node: any): string {
-    let result = '';
+export function getDependencyId(node: estree.ImportDeclaration): string | number | boolean | RegExp {
+    let result: string | number | boolean | RegExp = '';
 
     if (node && node.source && node.source.value) {
         result = node.source.value;
@@ -28,7 +28,7 @@ export function getDependencyId(node: any): string {
     return result;
 }
 
-export function getDependencyFolder(node: any): string {
+export function getDependencyFolder(node: estree.ImportDeclaration): string {
     let result = '';
 
     if (node && node.loc && node.loc.source) {
@@ -36,4 +36,22 @@ export function getDependencyFolder(node: any): string {
     }
 
     return result;
+}
+
+export function markFunctions(ast: estree.Program): void {
+    const exportNamedDeclarationCB = (node, parent): void => {
+        
+    }
+
+    visitAST(ast, 'ExportNamedDeclaration', exportNamedDeclarationCB);
+}
+
+export function shake(ast: estree.Program): estree.Program {
+    const functionDeclarationCB = (node, parent) => {
+        if (!node.keep) {
+            return VisitorOption.Remove;
+        }
+    };
+
+    return visitAST(ast, 'FunctionDeclaration', functionDeclarationCB);
 }
