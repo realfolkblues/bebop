@@ -26,7 +26,8 @@ export default class Evaluator extends Stream<IModule> {
 
     enrich(module: IModule): IModule {
         this.logger.log(`Evaluating ${module.fullPath}`);
-        markAST(module.ast);
+        module.ast = shakeAST(markAST(module.ast));
+        this.logger.debug(module.ast);
         this.logger.log(`Evaluation DONE`);
 
         return module;
