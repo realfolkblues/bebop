@@ -46,7 +46,7 @@ export function markFunctions(ast: estree.Program): void {
     visitAST(ast, 'ExportNamedDeclaration', exportNamedDeclarationCB);
 }
 
-export function shake(ast: estree.Program): estree.Program {
+export function shakeAST(ast: estree.Program): estree.Program {
     const functionDeclarationCB = (node, parent) => {
         if (!node.keep) {
             return VisitorOption.Remove;
