@@ -124,7 +124,7 @@ export default class Crawler extends Stream<IModule> {
             }
         };
 
-        visitAST(partialModule.ast, 'ImportDeclaration', importDeclarationCallback);
+        visitAST(partialModule.ast, ['ImportDeclaration'], importDeclarationCallback);
 
         if (deps.length > 0) {
             this.logger.debug('Dependencies:', deps);

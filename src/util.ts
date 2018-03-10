@@ -1,21 +1,33 @@
 import { dirname } from 'path';
 import * as estree from 'estree';
-import { traverse, VisitorOption } from 'estraverse';
+import { replace, traverse, VisitorOption } from 'estraverse';
 
-export function visitAST(ast: estree.Program, nodeType: string = '', cb: Function, filter: boolean = true): estree.Program {
-    let visitor: Object = {};
-
-    if (nodeType.length > 0 && cb && typeof cb === 'function') {
+export function visitAST(ast: estree.Program, nodeTypes: string[] = [], cb: Function): void {
+    if (nodeTypes.length > 0 && cb && typeof cb === 'function') {
         traverse(ast, {
             enter: (node: estree.Node, parent: estree.Node): void => {
-                if ((node.type === nodeType || nodeType === '') && filter) {
+                if (nodeTypes.indexOf(node.type) > -1) {
                     cb(node, parent);
                 }
             }
         });
     }
+}
 
-    return ast;
+export function alterAST(ast: estree.Program, nodeType: string[] = [], cb: Function): estree.Program {
+    let result: estree.Program = ast;
+
+    if (nodeType.length > 0 && cb) {
+        result = replace(ast, {
+            enter: (node: estree.Node, parent: estree.Node): estree.Node => {
+                if (nodeType.indexOf(node.type) > -1) {
+                    return cb(node, parent);
+                }
+            }
+        });
+    }
+
+    return result;
 }
 
 export function getDependencyId(node: estree.ImportDeclaration): string {
@@ -38,20 +50,27 @@ export function getDependencyFolder(node: estree.ImportDeclaration): string {
     return result;
 }
 
-export function markFunctions(ast: estree.Program): void {
-    const exportNamedDeclarationCB = (node, parent): void => {
-        
-    }
+export function markAST(ast: estree.Program): estree.Program {
+    let result: estree.Program | null;
 
-    visitAST(ast, 'ExportNamedDeclaration', exportNamedDeclarationCB);
+    const markNode = (node) => {
+        node['keep'] = true;
+        return node;
+    };
+
+    return alterAST(ast, ['ExportNamedDeclaration'], (node, parent) => {
+        result = alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
+            markNode(innerNode);
+        });
+
+        return result;
+    });
 }
 
 export function shakeAST(ast: estree.Program): estree.Program {
-    const functionDeclarationCB = (node, parent) => {
+    return alterAST(ast, ['FunctionDeclaration'], (node, parent) => {
         if (!node.keep) {
             return VisitorOption.Remove;
         }
-    };
-
-    return visitAST(ast, 'FunctionDeclaration', functionDeclarationCB);
+    });
 }
