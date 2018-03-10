@@ -19,7 +19,7 @@ export function visitAST(ast: estree.Program, nodeType: string = '', cb: Functio
 }
 
 export function getDependencyId(node: estree.ImportDeclaration): string {
-    let result: string;
+    let result: string = '';
 
     if (node && node.source && node.source.value && typeof node.source.value === 'string') {
         result = node.source.value;
@@ -29,7 +29,7 @@ export function getDependencyId(node: estree.ImportDeclaration): string {
 }
 
 export function getDependencyFolder(node: estree.ImportDeclaration): string {
-    let result = '';
+    let result: string = '';
 
     if (node && node.loc && node.loc.source) {
         result = dirname(node.loc.source);
