@@ -1,6 +1,7 @@
 import { dirname } from 'path';
 import * as estree from 'estree';
 import { replace, traverse, VisitorOption } from 'estraverse';
+import { print } from 'recast';
 
 export function visitAST(ast: estree.Program, nodeTypes: string[] = [], cb: Function): void {
     if (nodeTypes.length > 0 && cb && typeof cb === 'function') {
@@ -73,4 +74,14 @@ export function shakeAST(ast: estree.Program): estree.Program {
             return VisitorOption.Remove;
         }
     });
+}
+
+export function astToSource(ast: estree.Program): string {
+    let result = '';
+
+    if (!!ast) {
+        result = print(ast).code;
+    }
+
+    return result;
 }
