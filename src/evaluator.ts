@@ -4,7 +4,7 @@ import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
 import Crawler, { IModule } from './crawler';
-import { visitAST, markAST, shakeAST } from './util';
+import { visitAST, markAST, shakeAST, astToSource } from './util';
 
 export default class Evaluator extends Stream<IModule> {
     crawler: Crawler
@@ -26,8 +26,10 @@ export default class Evaluator extends Stream<IModule> {
 
     enrich(module: IModule): IModule {
         this.logger.log(`Evaluating ${module.fullPath}`);
+
         module.ast = shakeAST(markAST(module.ast));
-        this.logger.debug(module.ast);
+        
+        this.logger.log(`Output:`, astToSource(module.ast));
         this.logger.log(`Evaluation DONE`);
 
         return module;
