@@ -18,10 +18,10 @@ export function visitAST(ast: estree.Program, nodeType: string = '', cb: Functio
     return ast;
 }
 
-export function getDependencyId(node: estree.ImportDeclaration): string | number | boolean | RegExp {
-    let result: string | number | boolean | RegExp = '';
+export function getDependencyId(node: estree.ImportDeclaration): string {
+    let result: string;
 
-    if (node && node.source && node.source.value) {
+    if (node && node.source && node.source.value && typeof node.source.value === 'string') {
         result = node.source.value;
     }
 
