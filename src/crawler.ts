@@ -24,7 +24,6 @@ export default class Crawler extends Stream<IModule> {
     readonly entryPoint: string
     readonly encoding: string
     readonly stream: Subject<IFileContext>
-    observable: Observable<IModule>
 
     constructor(logger: Logger, resolver: Resolver, monitor: Monitor<string>, entryPoint: string, encoding: string = 'utf8') {
         super(logger);
