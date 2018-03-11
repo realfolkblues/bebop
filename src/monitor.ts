@@ -9,7 +9,7 @@ export default class Monitor<T> {
         this.logger = logger;
         this.registry = new Map<T, boolean>();
 
-        this.logger.info('Monitor');
+        this.logger.debug('Instantiating monitor...');
     }
 
     add(key: T): T { 
@@ -23,7 +23,10 @@ export default class Monitor<T> {
     }
 
     logStatus() { 
-        this.logger.debug('Monitor status:', this.registry);
+        this.logger.debug('Monitor status:');
+        this.registry.forEach((value: boolean, key: T) => {
+            this.logger.debug(`- ${key}:`, value ? 'processed' : 'in queue...');
+        });
     }
 
     get isConsumed(): boolean { 

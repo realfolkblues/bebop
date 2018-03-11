@@ -14,7 +14,7 @@ const entryPoint = process.env.npm_config_target_path || './examples/fn/01/index
 
 const logger = new Logger();
 const resolver = new Resolver();
-const monitor = new Monitor<IFileContext>(logger);
+const monitor = new Monitor<string>(logger);
 const crawler = new Crawler(logger, resolver, monitor, entryPoint);
 const evaluator = new Evaluator(logger, crawler);
 

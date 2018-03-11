@@ -8,8 +8,10 @@ export default class Evaluator extends Stream<IModule> {
     crawler: Crawler
 
     constructor(logger: Logger, crawler: Crawler) {
-        super(logger, 'Evaluating modules');
+        super(logger);
         this.crawler = crawler;
+
+        this.logger.debug('Instantiating evaluator...');
     }
 
     init(): void { 
@@ -23,14 +25,14 @@ export default class Evaluator extends Stream<IModule> {
     }
 
     enrich(module: IModule): IModule {
-        this.logger.log(`Evaluating`, module.fullPath);
+        this.logger.info(`Evaluating ${module.fullPath}...`);
 
         const collection = jscodeshift(module.ast);
         collection.markFunctions();
         collection.shake();
 
-        this.logger.log(`Output:`, collection.toSource());
-        this.logger.log(`Evaluation DONE`);
+        this.logger.debug('Output:');
+        this.logger.debug(collection.toSource());
 
         return module;
     }
