@@ -4,7 +4,7 @@ import { replace, traverse, VisitorOption } from 'estraverse';
 import { print } from 'recast';
 
 export function visitAST(ast: estree.Program, nodeTypes: string[] = [], cb: Function): void {
-    if (nodeTypes.length > 0 && cb && typeof cb === 'function') {
+    if (nodeTypes.length > 0 && cb) {
         traverse(ast, {
             enter: (node: estree.Node, parent: estree.Node): void => {
                 if (nodeTypes.indexOf(node.type) > -1) {
@@ -15,13 +15,13 @@ export function visitAST(ast: estree.Program, nodeTypes: string[] = [], cb: Func
     }
 }
 
-export function alterAST(ast: estree.Program, nodeType: string[] = [], cb: Function): estree.Program {
+export function alterAST(ast: estree.Program, nodeTypes: string[] = [], cb: Function): estree.Program {
     let result: estree.Program = ast;
 
-    if (nodeType.length > 0 && cb) {
+    if (nodeTypes.length > 0 && cb) {
         result = replace(ast, {
             enter: (node: estree.Node, parent: estree.Node): estree.Node => {
-                if (nodeType.indexOf(node.type) > -1) {
+                if (nodeTypes.indexOf(node.type) > -1) {
                     return cb(node, parent);
                 }
             }
