@@ -29,7 +29,7 @@ export default class Evaluator extends Stream<IModule> {
 
         module.ast = shakeAST(markAST(module.ast));
         
-        this.logger.log(`Output:`, astToSource(module.ast));
+        this.logger.log(`Output:\r\n`, astToSource(module.ast));
         this.logger.log(`Evaluation DONE`);
 
         return module;
