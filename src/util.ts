@@ -51,29 +51,38 @@ export function getDependencyFolder(node: estree.ImportDeclaration): string {
     return result;
 }
 
-export function first(nodeType): estree.Function {
-    let result: estree.Function;
-
-    return result;
-}
-
 export function markAST(ast: estree.Program): estree.Program {
     let result: estree.Program | null = ast;
 
-    const markNode = (node: estree.Node) => {
+    const markNode = (node: estree.Node): estree.Node => {
         node['keep'] = true;
         return node;
     };
 
-    const returnStatementCB = (node: estree.Node, parent: estree.Node) => {
+    const statementDeclarationsFilter = (statement, caller): boolean => {
+        if (statement.value.argument && caller.value.id) {
+            return statement.value.argument.name === caller.value.id.name;
+        }
+    
+        return false;
+    }
+
+    const first = (rootNode: estree.Node, nodeType: string, filter: boolean): estree.Node => {
+        let result: estree.Node = null;
+    
+        return result;
+    };
+
+    const returnStatementCB = (node: estree.Node, parent: estree.Node): estree.Node => {
         return alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node) => {
-            markNode(innerNode);
+            
+            return innerNode;
         });
     };
 
-    const exportNamedDeclarationCB = (node: estree.Node, parent: estree.Node) => {
+    const exportNamedDeclarationCB = (node: estree.Node, parent: estree.Node): estree.Node => {
         return alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
-            markNode(innerNode);
+            return markNode(innerNode);
         });
     };
 
@@ -83,8 +92,8 @@ export function markAST(ast: estree.Program): estree.Program {
     return result;
 }
 
-export function shakeAST(rootNode: estree.Node): estree.Program {
-    return <estree.Program>alterAST(rootNode, ['FunctionDeclaration'], (node: estree.Node, parent: estree.Node) => {
+export function shakeAST(ast: estree.Program): estree.Program {
+    return <estree.Program>alterAST(ast, ['FunctionDeclaration'], (node: estree.Node, parent: estree.Node) => {
         if (!node['keep']) {
             return VisitorOption.Remove;
         }
