@@ -3,9 +3,9 @@ import * as estree from 'estree';
 import { replace, traverse, VisitorOption } from 'estraverse';
 import { print } from 'recast';
 
-export function visitAST(ast: estree.Program, nodeTypes: string[] = [], cb: Function): void {
+export function visitAST(rootNode: estree.Node, nodeTypes: string[] = [], cb: Function): void {
     if (nodeTypes.length > 0 && cb) {
-        traverse(ast, {
+        traverse(rootNode, {
             enter: (node: estree.Node, parent: estree.Node): void => {
                 if (nodeTypes.indexOf(node.type) > -1) {
                     cb(node, parent);
@@ -15,11 +15,11 @@ export function visitAST(ast: estree.Program, nodeTypes: string[] = [], cb: Func
     }
 }
 
-export function alterAST(ast: estree.Program, nodeTypes: string[] = [], cb: Function): estree.Program {
-    let result: estree.Program = ast;
+export function alterAST(rootNode: estree.Node, nodeTypes: string[] = [], cb: Function): estree.Node {
+    let result: estree.Node = rootNode;
 
     if (nodeTypes.length > 0 && cb) {
-        result = replace(ast, {
+        result = replace(rootNode, {
             enter: (node: estree.Node, parent: estree.Node): estree.Node => {
                 if (nodeTypes.indexOf(node.type) > -1) {
                     return cb(node, parent);
@@ -51,26 +51,41 @@ export function getDependencyFolder(node: estree.ImportDeclaration): string {
     return result;
 }
 
-export function markAST(ast: estree.Program): estree.Program {
-    let result: estree.Program | null;
+export function first(nodeType): estree.Function {
+    let result: estree.Function;
 
-    const markNode = (node) => {
+    return result;
+}
+
+export function markAST(ast: estree.Program): estree.Program {
+    let result: estree.Program | null = ast;
+
+    const markNode = (node: estree.Node) => {
         node['keep'] = true;
         return node;
     };
 
-    return alterAST(ast, ['ExportNamedDeclaration'], (node, parent) => {
-        result = alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
+    const returnStatementCB = (node: estree.Node, parent: estree.Node) => {
+        return alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node) => {
             markNode(innerNode);
         });
+    };
 
-        return result;
-    });
+    const exportNamedDeclarationCB = (node: estree.Node, parent: estree.Node) => {
+        return alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
+            markNode(innerNode);
+        });
+    };
+
+    result = <estree.Program>alterAST(result, ['ReturnStatement'], returnStatementCB);
+    result = <estree.Program>alterAST(result, ['ExportNamedDeclaration'], exportNamedDeclarationCB);
+
+    return result;
 }
 
-export function shakeAST(ast: estree.Program): estree.Program {
-    return alterAST(ast, ['FunctionDeclaration'], (node, parent) => {
-        if (!node.keep) {
+export function shakeAST(rootNode: estree.Node): estree.Program {
+    return <estree.Program>alterAST(rootNode, ['FunctionDeclaration'], (node: estree.Node, parent: estree.Node) => {
+        if (!node['keep']) {
             return VisitorOption.Remove;
         }
     });
