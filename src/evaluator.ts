@@ -1,5 +1,5 @@
 import * as estree from 'estree';
-import { NodeCollection } from './nodeCollection';
+import Inspector from './inspector';
 import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
