@@ -91,14 +91,21 @@ export function markAST(ast: estree.Program): estree.Program {
     result = <estree.Program>alterAST(result, ['CallExpression', 'ReturnStatement', 'ExportNamedDeclaration'], (node: estree.Node, parent: estree.Node): estree.Node => {
         let output: estree.Node = node;
 
+        if (node.type === 'CallExpression') {
+            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node): estree.Node => {
+                return innerNode;
+            });
+        }
+
         if (node.type === 'ReturnStatement') {
-            output = alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node) => {
+            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node): estree.Node => {
+                
                 return innerNode;
             });
         }
 
         if (node.type === 'ExportNamedDeclaration') {
-            output = alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
+            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node): estree.Node => {
                 return markNode(innerNode);
             });
         }
