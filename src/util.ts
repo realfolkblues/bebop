@@ -52,7 +52,7 @@ export function getDependencyFolder(node: estree.ImportDeclaration): string {
 }
 
 export function markAST(ast: estree.Program): estree.Program {
-    let result: estree.Program | null = ast;
+    let result: estree.Program = ast;
 
     const markNode = (node: estree.Node): estree.Node => {
         node['keep'] = true;
@@ -88,24 +88,23 @@ export function markAST(ast: estree.Program): estree.Program {
         return output;
     };
 
-    result = <estree.Program>alterAST(result, ['CallExpression', 'ReturnStatement', 'ExportNamedDeclaration'], (node: estree.Node, parent: estree.Node): estree.Node => {
+    result = <estree.Program>alterAST(result, ['CallExpression', 'ReturnStatement', 'ExportNamedDeclaration'], (node, parent) => {
         let output: estree.Node = node;
 
         if (node.type === 'CallExpression') {
-            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node): estree.Node => {
+            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
                 return innerNode;
             });
         }
-
+        
         if (node.type === 'ReturnStatement') {
-            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node): estree.Node => {
-                
+            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
                 return innerNode;
             });
         }
 
         if (node.type === 'ExportNamedDeclaration') {
-            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode: estree.Node, innerParent: estree.Node): estree.Node => {
+            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
                 return markNode(innerNode);
             });
         }
