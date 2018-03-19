@@ -53,6 +53,7 @@ export function getDependencyFolder(node: estree.ImportDeclaration): string {
 
 export function markAST(ast: estree.Program): estree.Program {
     let result: estree.Program = ast;
+    let matchingAncestors: estree.Node[] = [];
 
     const markNode = (node: estree.Node): estree.Node => {
         node['keep'] = true;
@@ -60,16 +61,16 @@ export function markAST(ast: estree.Program): estree.Program {
     };
 
     const functionDeclarationsFilter = (call, caller): boolean => {
-        if (call.value.callee && caller.value.id) {
-            return call.value.callee.name === caller.value.id.name;
+        if (call.callee && caller.id) {
+            return call.callee.name === caller.id.name;
         }
     
         return false;
     };
 
     const statementDeclarationsFilter = (statement, caller): boolean => {
-        if (statement.value.argument && caller.value.id) {
-            return statement.value.argument.name === caller.value.id.name;
+        if (statement.argument.callee && caller.id) {
+            return statement.argument.callee.name === caller.id.name;
         }
     
         return false;
@@ -77,39 +78,34 @@ export function markAST(ast: estree.Program): estree.Program {
 
     const first = (rootNode: estree.Node, filter: Function): estree.Node => {
         let output: estree.Node = null;
-    
+
+        visitAST(ast, ['FunctionDeclaration', 'FunctionExpression'], (node, parent) => {
+            if (filter(rootNode, node)) {
+                output = node;
+            }
+        });
+
         return output;
     };
 
-    const callExpressionCB = (callExpressionNode: estree.CallExpression, callExpressionParent: estree.Node): estree.Node => {
-        let output: estree.Node = callExpressionNode;
-        const callee: estree.Identifier = <estree.Identifier>callExpressionNode.callee;
+    visitAST(result, ['CallExpression'], (node, parent) => {
+        matchingAncestors.push(first(node, functionDeclarationsFilter));
+    });
 
-        return output;
-    };
+    visitAST(result, ['ReturnStatement'], (node, parent) => {
+        matchingAncestors.push(first(node, statementDeclarationsFilter));
+    });
 
-    result = <estree.Program>alterAST(result, ['CallExpression', 'ReturnStatement', 'ExportNamedDeclaration'], (node, parent) => {
-        let output: estree.Node = node;
-
-        if (node.type === 'CallExpression') {
-            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
-                return innerNode;
-            });
+    result = <estree.Program>alterAST(result, ['FunctionDeclaration', 'FunctionExpression'], (node, parent) => {
+        if (matchingAncestors.indexOf(node) > -1) {
+            return markNode(node);
         }
-        
-        if (node.type === 'ReturnStatement') {
-            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
-                return innerNode;
-            });
-        }
+    });
 
-        if (node.type === 'ExportNamedDeclaration') {
-            output = alterAST(output, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
-                return markNode(innerNode);
-            });
-        }
-
-        return output;
+    result = <estree.Program>alterAST(result, ['ExportNamedDeclaration'], (node, parent) => {
+        return alterAST(node, ['FunctionDeclaration', 'FunctionExpression'], (innerNode, innerParent) => {
+            return markNode(innerNode);
+        });
     });
 
     return result;
