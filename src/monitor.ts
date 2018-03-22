@@ -1,5 +1,4 @@
 import Logger from './logger';
-import { IFileContext } from './resolver';
 
 export default class Monitor<T> { 
     readonly logger: Logger

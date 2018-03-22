@@ -4,12 +4,13 @@ import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
 import Monitor from './monitor';
+import Resolver from './resolver';
 import * as acorn from 'acorn';
 import * as estree from 'estree';
 import { visitAST } from './recast-util';
-import Resolver, { IFileContext, IFileInfo } from './resolver';
 
-export interface IFile extends IFileInfo {
+export interface IFile {
+    fullPath: string
     content: string
 }
 
@@ -23,7 +24,7 @@ export default class Crawler extends Stream<IModule> {
     readonly monitor: Monitor<string>
     readonly entryPoint: string
     readonly encoding: string
-    readonly stream: Subject<IFileContext>
+    readonly stream: Subject<string>
 
     constructor(logger: Logger, resolver: Resolver, monitor: Monitor<string>, entryPoint: string, encoding: string = 'utf8') {
         super(logger);
@@ -32,30 +33,21 @@ export default class Crawler extends Stream<IModule> {
         this.monitor = monitor;
         this.entryPoint = entryPoint;
         this.encoding = encoding;
-        this.stream = new Subject<IFileContext>();
+        this.stream = new Subject<string>();
 
         this.logger.debug('Instantiating crawler...');
     }
 
     init(): void {
         this.logger.info(`Crawling into ${this.entryPoint}...`);
-
-        const entryContext = {
-            id: this.entryPoint,
-            base: ''
-        };
-
-        const entryFullPath = this.resolve(entryContext);
-
-        this.monitor.add(entryFullPath.fullPath);
-        this.stream.next(entryContext);
+        this.monitor.add(this.entryPoint);
+        this.stream.next(this.entryPoint);
     }
 
     get(): Observable<IModule> {
         const observable = this.stream
             .asObservable()
-            .map((dependency: IFileContext) => this.resolve(dependency))
-            .map((info: IFileInfo) => this.readFile(info))
+            .map((fullPath: string) => this.readFile(fullPath))
             .map((file: IFile) => this.getModule(file))
             .share();
         
@@ -70,11 +62,10 @@ export default class Crawler extends Stream<IModule> {
                 this.monitor.consume(module.fullPath);
 
                 this.getDeps(module)
-                    .map((dependency: IFileContext) => this.resolve(dependency))   
-                    .map((info: IFileInfo) => { 
-                        this.logger.info(`Crawling into ${this.entryPoint}...`);
-                        this.monitor.add(info.fullPath);
-                        this.stream.next(info.context); 
+                    .map((fullPath: string) => { 
+                        this.logger.info(`Crawling into ${fullPath}...`);
+                        this.monitor.add(fullPath);
+                        this.stream.next(fullPath); 
                     });
                 
                 setTimeout(() => {
@@ -89,16 +80,13 @@ export default class Crawler extends Stream<IModule> {
         });
     }
 
-    protected resolve(dependency: IFileContext): IFileInfo { 
-        return this.resolver.resolve(dependency);
-    }
+    protected readFile(fullPath: string): IFile {
+        this.logger.log(`Reading file ${fullPath}...`);
 
-    protected readFile(info: IFileInfo): IFile {
-        this.logger.log(`Reading file ${info.fullPath}...`);
-
-        return <IFile>Object.assign({}, info, {
-            content: readFileSync(info.fullPath, this.encoding),
-        });
+        return <IFile>{
+            fullPath,
+            content: readFileSync(fullPath, this.encoding)
+        };
     }
 
     protected getModule(file: IFile): IModule { 
@@ -119,22 +107,20 @@ export default class Crawler extends Stream<IModule> {
         });
     }
 
-    protected getDeps(module: IModule): IFileContext[] { 
-        const deps: IFileContext[] = [];
+    protected getDeps(module: IModule): string[] { 
+        const dependenciesFullPaths: string[] = [];
         this.logger.log(`Looking for deps in ${module.fullPath}...`);
 
         const importDeclarationCallback = (nodePath): void => {
             if (nodePath && nodePath.value && nodePath.value.source && nodePath.value.source.value && nodePath.value.loc && nodePath.value.loc.source) {
-                deps.push({
-                    id: nodePath.value.source.value,
-                    base: dirname(nodePath.value.loc.source)
-                });
+                const dependenciesFullPath = this.resolver.resolve2(nodePath.value.source.value, dirname(nodePath.value.loc.source));
+                dependenciesFullPaths.push(dependenciesFullPath);
             }
         };
 
         visitAST(module.ast, 'ImportDeclaration', importDeclarationCallback);
-        this.logger.debug(`-> ${deps.length} deps found`);
+        this.logger.debug(`-> ${dependenciesFullPaths.length} deps found`);
 
-        return deps;          
+        return dependenciesFullPaths;          
     }
 }
