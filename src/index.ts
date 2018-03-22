@@ -1,6 +1,7 @@
+import { join } from 'path';
 import Logger from './logger';
 import Monitor from './monitor';
-import Resolver, { IFileContext } from './resolver';
+import Resolver from './resolver';
 import Crawler from './crawler';
 import Evaluator from './evaluator';
 import registerUtils from './jscodeshift-util';
@@ -10,12 +11,13 @@ console.log('== BEGIN ==========================================================
 registerUtils();
 
 const cwd = process.cwd();
-const entryPoint = process.env.npm_config_target_path || './examples/fn/01/index.js';
+const entryPointPath = process.env.npm_config_target_path || './examples/fn/01/index.js';
+const entryPointFullPath = join(cwd, entryPointPath);
 
 const logger = new Logger();
-const resolver = new Resolver();
-const monitor = new Monitor<IFileContext>(logger);
-const crawler = new Crawler(logger, resolver, monitor, entryPoint);
+const resolver = new Resolver(cwd);
+const monitor = new Monitor<string>(logger);
+const crawler = new Crawler(logger, resolver, monitor, entryPointFullPath);
 const evaluator = new Evaluator(logger, crawler);
 
 const stream = evaluator.get();

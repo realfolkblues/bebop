@@ -1,19 +1,35 @@
+import * as chalk from 'chalk';
+
+const debug = chalk.dim;
+const log = chalk.cyan;
+const info = chalk.green;
+const warn = chalk.yellow;
+const error = chalk.red;
+
 export default class Logger { 
 
+    constructor() { 
+        this.debug('Instantiating logger...');
+    }
+
     debug(...args: any[]): void {
-        console.log('    ', ...args);
+        console.log(debug(...args));
     }
 
     log(...args: any[]): void { 
-        console.log('  ', ...args);
+        console.log(log(...args));
     }
 
     info(...args: any[]) {
-        console.log(...args);
+        console.info(info('\u25B6', ...args));
+    }
+
+    warn(...args: any[]): void {
+        console.warn(warn(...args));
     }
 
     error(...args: any[]): void { 
-        console.error(...args);
+        console.error(error(...args));
     }
     
 }
