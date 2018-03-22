@@ -8,7 +8,7 @@ export default class Resolver {
         this.cwd = cwd;
     }
 
-    resolve2(id: string, base: string = this.cwd): string {
+    resolve(id: string, base: string = this.cwd): string {
         if (isAbsolute(id) || this.isNodeModule(id)) {
             return require.resolve(id);
         }

@@ -113,7 +113,7 @@ export default class Crawler extends Stream<IModule> {
 
         const importDeclarationCallback = (nodePath): void => {
             if (nodePath && nodePath.value && nodePath.value.source && nodePath.value.source.value && nodePath.value.loc && nodePath.value.loc.source) {
-                const dependenciesFullPath = this.resolver.resolve2(nodePath.value.source.value, dirname(nodePath.value.loc.source));
+                const dependenciesFullPath = this.resolver.resolve(nodePath.value.source.value, dirname(nodePath.value.loc.source));
                 dependenciesFullPaths.push(dependenciesFullPath);
             }
         };
