@@ -39,9 +39,7 @@ export default class Crawler extends Stream<IModule> {
     }
 
     init(): void {
-        this.logger.info(`Crawling into ${this.entryPoint}...`);
-        this.monitor.add(this.entryPoint);
-        this.stream.next(this.entryPoint);
+        this.crawl(this.entryPoint);
     }
 
     get(): Observable<IModule> {
@@ -55,18 +53,18 @@ export default class Crawler extends Stream<IModule> {
         return observable;
     }
 
+    protected crawl(fullPath: string): void { 
+        this.logger.info(`Crawling into ${fullPath}...`);
+        this.monitor.add(fullPath);
+        this.stream.next(fullPath);
+    }
+
     protected monitorize(observable: Observable<IModule>): void {
         observable.subscribe({
             next: (module: IModule) => {
                 this.monitor.logStatus();
                 this.monitor.consume(module.fullPath);
-
-                this.getDeps(module)
-                    .map((fullPath: string) => { 
-                        this.logger.info(`Crawling into ${fullPath}...`);
-                        this.monitor.add(fullPath);
-                        this.stream.next(fullPath); 
-                    });
+                this.getDeps(module).map((fullPath: string) => this.crawl(fullPath));
                 
                 setTimeout(() => {
                     if (this.monitor.isConsumed) {
@@ -108,19 +106,19 @@ export default class Crawler extends Stream<IModule> {
     }
 
     protected getDeps(module: IModule): string[] { 
-        const dependenciesFullPaths: string[] = [];
+        const dependencyFullPaths: string[] = [];
         this.logger.log(`Looking for deps in ${module.fullPath}...`);
 
         const importDeclarationCallback = (nodePath): void => {
             if (nodePath && nodePath.value && nodePath.value.source && nodePath.value.source.value && nodePath.value.loc && nodePath.value.loc.source) {
-                const dependenciesFullPath = this.resolver.resolve(nodePath.value.source.value, dirname(nodePath.value.loc.source));
-                dependenciesFullPaths.push(dependenciesFullPath);
+                const dependencyFullPath = this.resolver.resolve(nodePath.value.source.value, dirname(nodePath.value.loc.source));
+                dependencyFullPaths.push(dependencyFullPath);
             }
         };
 
         visitAST(module.ast, 'ImportDeclaration', importDeclarationCallback);
-        this.logger.debug(`-> ${dependenciesFullPaths.length} deps found`);
+        this.logger.debug(`-> ${dependencyFullPaths.length} deps found`);
 
-        return dependenciesFullPaths;          
+        return dependencyFullPaths;          
     }
 }
