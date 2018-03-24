@@ -3,13 +3,16 @@ import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
 import Logger from './logger';
 import Crawler, { IModule } from './crawler';
+import Inspector, { INode } from './inspector';
 
 export default class Evaluator extends Stream<IModule> {
     crawler: Crawler
+    inspector: Inspector
 
-    constructor(logger: Logger, crawler: Crawler) {
+    constructor(logger: Logger, crawler: Crawler, inspector: Inspector) {
         super(logger);
         this.crawler = crawler;
+        this.inspector = inspector;
 
         this.logger.debug('Instantiating evaluator...');
     }
@@ -27,12 +30,14 @@ export default class Evaluator extends Stream<IModule> {
     enrich(module: IModule): IModule {
         this.logger.info(`Evaluating ${module.fullPath}...`);
 
-        const collection = jscodeshift(module.ast);
-        collection.markFunctions();
-        collection.shake();
+        this.inspector.init(module.ast);
 
-        this.logger.debug('Output:');
-        this.logger.debug(collection.toSource());
+        // const collection = jscodeshift(module.ast);
+        // collection.markFunctions();
+        // collection.shake();
+
+        // this.logger.debug('Output:');
+        // this.logger.debug(collection.toSource());
 
         return module;
     }

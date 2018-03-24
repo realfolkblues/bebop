@@ -5,6 +5,7 @@ import Resolver from './resolver';
 import Crawler from './crawler';
 import Evaluator from './evaluator';
 import registerUtils from './jscodeshift-util';
+import Inspector from './inspector';
 
 console.log('== BEGIN ============================================================');
 
@@ -18,7 +19,8 @@ const logger = new Logger();
 const resolver = new Resolver(cwd);
 const monitor = new Monitor<string>(logger);
 const crawler = new Crawler(logger, resolver, monitor, entryPointFullPath);
-const evaluator = new Evaluator(logger, crawler);
+const inspector = new Inspector(logger);
+const evaluator = new Evaluator(logger, crawler, inspector);
 
 const stream = evaluator.get();
 
