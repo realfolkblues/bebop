@@ -5,8 +5,9 @@ import Logger from './logger';
 import Stream from './stream';
 
 export interface INode {
-    id: string
-    parentId: string
+    loc: estree.SourceLocation
+    parentLoc: estree.SourceLocation
+    type: string
     value: estree.Node
 }
 
@@ -23,22 +24,36 @@ export default class Inspector {
     init(ast: estree.Program): void {
         this.nodeStream = Observable
             .from(ast.body)
-            .map((item: estree.Node): INode => {
-                return <INode>{
-                    id: this.generateNodeId(item),
-                    parentId: uuid(),
-                    value: item
-                };
+            .map((item: estree.Node): INode => this.generateNode(item))
+            .map((item: INode): INode => {
+                let result = item;
+
+                if (item.value.hasOwnProperty('body')) {
+
+                }
+
+                return result;
             });
         
         this.nodeStream.subscribe({
             next: (item: INode) => {
-                this.logger.debug(item.id);
+                this.logger.debug(item.loc.start.line, item.type);
             },
             complete: () => {
                 this.logger.log('^^^^^^^^^^^^^^^');
             }
         });
+    }
+
+    generateNode(item: estree.Node): INode {
+        let result = <INode>{
+            loc: item.loc,
+            parentLoc: null,
+            type: item.type,
+            value: item
+        };
+
+        return result;
     }
 
     generateNodeId(item: estree.Node): string {
