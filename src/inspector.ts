@@ -24,11 +24,10 @@ export default class Inspector {
     init(ast: estree.Program): void {
         this.nodeStream = Observable
             .from(ast.body)
-            .map((item: estree.Node): INode => this.generateNode(item))
-            .map((item: INode): INode => {
-                let result = item;
+            .map((item: estree.Node): INode => {
+                let result = this.generateNode(item);
 
-                if (item.value.hasOwnProperty('body')) {
+                if (result.value.hasOwnProperty('body')) {
 
                 }
 
@@ -36,11 +35,11 @@ export default class Inspector {
             });
         
         this.nodeStream.subscribe({
-            next: (item: INode) => {
+            next: (item: INode): void => {
                 this.logger.debug(item.loc.start.line, item.type);
             },
-            complete: () => {
-                this.logger.log('^^^^^^^^^^^^^^^');
+            complete: (): void => {
+                this.logger.debug('----------------------------');
             }
         });
     }
@@ -54,9 +53,5 @@ export default class Inspector {
         };
 
         return result;
-    }
-
-    generateNodeId(item: estree.Node): string {
-        return item.loc.start.line + '-' + item.loc.start.column + '-' + item.loc.end.line + '-' + item.loc.end.column;
     }
 }
