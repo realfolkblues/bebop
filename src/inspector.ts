@@ -13,7 +13,7 @@ export interface INode {
 
 export default class Inspector {
     logger: Logger
-    nodeStream: Observable<INode>
+    collection: INode[] = []
 
     constructor(logger: Logger) { 
         this.logger = logger;
@@ -21,14 +21,24 @@ export default class Inspector {
         this.logger.debug('Instantiating inspector...');
     }
 
-    init(ast: estree.Program): void {
-        this.nodeStream = Observable
-            .from(ast.body)
-            .map((item: estree.Node): INode => this.enrichNode(item));
-        
-        this.nodeStream.subscribe({
+    init(ast: estree.Program): void {        
+        this.analyzeStream(this.arrayToStream(ast.body));
+    }
+
+    analyzeStream(stream: Observable<INode>): void {
+        stream.subscribe({
             next: (item: INode): void => {
-                this.logger.debug(item.loc.start.line, item.type);
+                this.collection.push(item);
+                this.collection.map((item: INode) => this.logger.debug(item.type));
+                if (item.value.hasOwnProperty('body')) {
+                    let children: estree.Node[] = [item.value['body']];
+
+                    if (Array.isArray(item.value['body'])) {
+                        children = [...item.value['body']];
+                    }
+                    
+                    this.analyzeStream(this.arrayToStream(children));
+                }
             },
             complete: (): void => {
                 this.logger.debug('----------------------------');
@@ -36,15 +46,19 @@ export default class Inspector {
         });
     }
 
+    arrayToStream(array: estree.Node[]): Observable<INode> {
+        return Observable
+            .from(array)
+            .map((item: estree.Node): INode => this.enrichNode(item));
+    }
+
     enrichNode(item: estree.Node, parentLoc: estree.SourceLocation = null): INode {
-        let result = <INode>{
+        return <INode>{
             keep: false,
             loc: item.loc,
             parentLoc: parentLoc,
             type: item.type,
             value: item
         };
-
-        return result;
     }
 }
