@@ -1,10 +1,10 @@
 import * as estree from 'estree';
 import { Observable, Subject } from 'rxjs/Rx';
-import * as uuid from 'uuid/v4';
 import Logger from './logger';
 import Stream from './stream';
 
 export interface INode {
+    keep: boolean
     loc: estree.SourceLocation
     parentLoc: estree.SourceLocation
     type: string
@@ -24,15 +24,7 @@ export default class Inspector {
     init(ast: estree.Program): void {
         this.nodeStream = Observable
             .from(ast.body)
-            .map((item: estree.Node): INode => {
-                let result = this.generateNode(item);
-
-                if (result.value.hasOwnProperty('body')) {
-
-                }
-
-                return result;
-            });
+            .map((item: estree.Node): INode => this.enrichNode(item));
         
         this.nodeStream.subscribe({
             next: (item: INode): void => {
@@ -44,10 +36,11 @@ export default class Inspector {
         });
     }
 
-    generateNode(item: estree.Node): INode {
+    enrichNode(item: estree.Node, parentLoc: estree.SourceLocation = null): INode {
         let result = <INode>{
+            keep: false,
             loc: item.loc,
-            parentLoc: null,
+            parentLoc: parentLoc,
             type: item.type,
             value: item
         };
