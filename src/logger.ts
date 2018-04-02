@@ -1,4 +1,5 @@
 import * as chalk from 'chalk';
+import { inspect } from 'util';
 
 const debug = chalk.dim;
 const log = chalk.cyan;
@@ -30,6 +31,10 @@ export default class Logger {
 
     error(...args: any[]): void { 
         console.error(error(...args));
+    }
+
+    explode(obj: any): void {
+        this.debug(inspect(obj));
     }
     
 }
