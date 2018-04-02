@@ -28,17 +28,19 @@ export default class Inspector {
     analyzeStream(stream: Observable<INode>): void {
         stream.subscribe({
             next: (item: INode): void => {
-                this.collection.push(item);
-                this.collection.map((item: INode) => this.logger.debug(item.type));
                 if (item.value.hasOwnProperty('body')) {
                     let children: estree.Node[] = [item.value['body']];
-
+                    
                     if (Array.isArray(item.value['body'])) {
                         children = [...item.value['body']];
                     }
+
+                    delete item.value['body'];
                     
                     this.analyzeStream(this.arrayToStream(children));
                 }
+                this.logger.explode(item);
+                this.collection.push(item);
             },
             complete: (): void => {
                 this.logger.debug('----------------------------');
