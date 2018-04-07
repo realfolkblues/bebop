@@ -36,14 +36,11 @@ export default class Inspector {
                     }
 
                     delete item.value['body'];
-                    
+
                     this.analyzeStream(this.arrayToStream(children));
                 }
-                this.logger.explode(item);
+                
                 this.collection.push(item);
-            },
-            complete: (): void => {
-                this.logger.debug('----------------------------');
             }
         });
     }
@@ -54,6 +51,16 @@ export default class Inspector {
             .map((item: estree.Node): INode => this.enrichNode(item));
     }
 
+    comb(): void {
+        this.collection = this.collection.map((item: INode) => {
+            if (item.type === 'ExportNamedDeclaration') {
+                this.markNode(item);
+            }
+            return item;
+        });
+        this.logger.debug('Marked live nodes');
+    }
+
     enrichNode(item: estree.Node, parentLoc: estree.SourceLocation = null): INode {
         return <INode>{
             keep: false,
@@ -62,5 +69,15 @@ export default class Inspector {
             type: item.type,
             value: item
         };
+    }
+
+    markNode(item: INode): INode {
+        item.keep = true;
+        return item;
+    }
+
+    shake(): void {
+        this.collection = this.collection.filter((item: INode) => item.keep);
+        this.logger.debug('Removed unnecessary nodes');
     }
 }
