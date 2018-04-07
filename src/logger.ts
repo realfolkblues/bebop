@@ -33,8 +33,8 @@ export default class Logger {
         console.error(error(...args));
     }
 
-    explode(obj: any): void {
-        this.debug(inspect(obj));
+    explode(...args: any[]): void {
+        [...args].map((item) => this.debug(inspect(item)));
     }
     
 }
