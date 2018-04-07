@@ -31,6 +31,10 @@ export default class Evaluator extends Stream<IModule> {
         this.logger.info(`Evaluating ${module.fullPath}...`);
 
         this.inspector.init(module.ast);
+        this.logger.debug(`Nodes in collection: ${this.inspector.collection.length}`);
+        this.inspector.comb();
+        this.inspector.shake();
+        this.logger.explode(...this.inspector.collection);
 
         // const collection = jscodeshift(module.ast);
         // collection.markFunctions();
