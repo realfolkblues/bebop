@@ -36,10 +36,6 @@ export default class Evaluator extends Stream<IModule> {
         this.inspector.shake();
         this.logger.explode(...this.inspector.collection);
 
-        // const collection = jscodeshift(module.ast);
-        // collection.markFunctions();
-        // collection.shake();
-
         // this.logger.debug('Output:');
         // this.logger.debug(collection.toSource());
 
