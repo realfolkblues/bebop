@@ -51,6 +51,10 @@ export default class Inspector {
             .map((item: estree.Node): INode => this.enrichNode(item));
     }
 
+    children(parent: INode): INode[] {
+        return this.collection.filter((item: INode) => item.parentLoc === parent.loc);
+    }
+
     comb(): void {
         this.collection = this.collection.map((item: INode) => {
             if (item.type === 'ExportNamedDeclaration') {
@@ -74,6 +78,10 @@ export default class Inspector {
     markNode(item: INode): INode {
         item.keep = true;
         return item;
+    }
+
+    parent(child: INode): INode {
+        return this.collection.find((item: INode) => item.loc === child.parentLoc);
     }
 
     shake(): void {
