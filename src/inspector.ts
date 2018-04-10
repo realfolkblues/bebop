@@ -11,6 +11,11 @@ export interface INode {
     value: estree.Node
 }
 
+export interface IExtraction {
+    node: INode
+    children: estree.Node[]
+}
+
 export default class Inspector {
     logger: Logger
     collection: INode[] = []
@@ -28,19 +33,14 @@ export default class Inspector {
     analyzeStream(stream: Observable<INode>): void {
         stream.subscribe({
             next: (item: INode): void => {
-                if (item.value.hasOwnProperty('body')) {
-                    let children: estree.Node[] = [item.value['body']];
-                    
-                    if (Array.isArray(item.value['body'])) {
-                        children = [...item.value['body']];
-                    }
+                let children: estree.Node[] = [];
 
-                    delete item.value['body'];
+                let extraction = this.extractFrom(item, 'body');
 
+                if (children.length > 0) {
                     this.analyzeStream(this.arrayToStream(children));
                 }
-                
-                this.collection.push(item);
+                this.collection.push(extraction.node);
             }
         });
     }
@@ -72,6 +72,25 @@ export default class Inspector {
             parentLoc: parentLoc,
             type: item.type,
             value: item
+        };
+    }
+
+    extractFrom(item: INode, prop: string): IExtraction {
+        let children: estree.Node[] = [];
+
+        if (item.value.hasOwnProperty(prop)) {
+            children = [item.value[prop]];
+            
+            if (Array.isArray(item.value[prop])) {
+                children = [...item.value[prop]];
+            }
+
+            delete item.value[prop];
+        }
+
+        return <IExtraction>{
+            node: item,
+            children: children
         };
     }
 
