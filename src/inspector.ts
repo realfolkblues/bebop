@@ -35,12 +35,19 @@ export default class Inspector {
             next: (item: INode): void => {
                 let children: estree.Node[] = [];
 
-                let extraction = this.extractFrom(item, 'body');
+                let extractBody = this.extractFrom(item, 'body');
+                children.push(...extractBody.children);
+
+                let extractArguments = this.extractFrom(extractBody.node, 'arguments');
+                children.push(...extractArguments.children);
+
+                let extractArgument = this.extractFrom(extractArguments.node, 'argument');
+                children.push(...extractArgument.children);
 
                 if (children.length > 0) {
                     this.analyzeStream(this.arrayToStream(children));
                 }
-                this.collection.push(extraction.node);
+                this.collection.push(extractArgument.node);
             }
         });
     }
