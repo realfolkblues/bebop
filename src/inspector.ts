@@ -33,21 +33,22 @@ export default class Inspector {
     analyzeStream(stream: Observable<INode>): void {
         stream.subscribe({
             next: (item: INode): void => {
+                const props: string[] = [
+                    'body',
+                    'arguments',
+                    'argument'
+                ];
                 let children: estree.Node[] = [];
-
-                let extractBody = this.extractFrom(item, 'body');
-                children.push(...extractBody.children);
-
-                let extractArguments = this.extractFrom(extractBody.node, 'arguments');
-                children.push(...extractArguments.children);
-
-                let extractArgument = this.extractFrom(extractArguments.node, 'argument');
-                children.push(...extractArgument.children);
+                
+                props.forEach((prop: string) => {
+                    children.concat(this.extractFrom(item, prop));
+                    delete item.value[prop];
+                });
 
                 if (children.length > 0) {
                     this.analyzeStream(this.arrayToStream(children));
                 }
-                this.collection.push(extractArgument.node);
+                this.collection.push(item);
             }
         });
     }
@@ -82,7 +83,7 @@ export default class Inspector {
         };
     }
 
-    extractFrom(item: INode, prop: string): IExtraction {
+    extractFrom(item: INode, prop: string): estree.Node[] {
         let children: estree.Node[] = [];
 
         if (item.value.hasOwnProperty(prop)) {
@@ -91,14 +92,9 @@ export default class Inspector {
             if (Array.isArray(item.value[prop])) {
                 children = [...item.value[prop]];
             }
-
-            delete item.value[prop];
         }
 
-        return <IExtraction>{
-            node: item,
-            children: children
-        };
+        return children;
     }
 
     markNode(item: INode): INode {
