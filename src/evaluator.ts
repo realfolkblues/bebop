@@ -1,43 +1,43 @@
 import * as jscodeshift from 'jscodeshift';
 import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
-import Logger from './logger';
 import Crawler, { IModule } from './crawler';
 import Inspector, { INode } from './inspector';
+import * as logger from './logger';
 
 export default class Evaluator extends Stream<IModule> {
     crawler: Crawler
     inspector: Inspector
 
-    constructor(logger: Logger, crawler: Crawler, inspector: Inspector) {
-        super(logger);
+    constructor(crawler: Crawler, inspector: Inspector) {
+        super();
         this.crawler = crawler;
         this.inspector = inspector;
 
-        this.logger.debug('Instantiating evaluator...');
+        logger.debug('Instantiating evaluator...');
     }
 
-    init(): void { 
+    init(): void {
         this.crawler.init();
     }
 
-    get(): Observable<IModule> { 
+    get(): Observable<IModule> {
         return this.crawler
             .get()
             .map((module: IModule) => this.enrich(module));
     }
 
     enrich(module: IModule): IModule {
-        this.logger.info(`Evaluating ${module.fullPath}...`);
+        logger.info(`Evaluating ${module.fullPath}...`);
 
         this.inspector.init(module.ast);
-        this.logger.debug(`Nodes in collection: ${this.inspector.collection.length}`);
+        logger.debug(`Nodes in collection: ${this.inspector.collection.length}`);
         this.inspector.comb();
         this.inspector.shake();
-        this.logger.explode(...this.inspector.collection);
+        logger.explode(...this.inspector.collection);
 
-        // this.logger.debug('Output:');
-        // this.logger.debug(collection.toSource());
+        // logger.debug('Output:');
+        // logger.debug(collection.toSource());
 
         return module;
     }

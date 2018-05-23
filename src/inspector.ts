@@ -1,7 +1,7 @@
 import * as estree from 'estree';
 import { Observable, Subject } from 'rxjs/Rx';
-import Logger from './logger';
 import Stream from './stream';
+import * as logger from './logger';
 
 export interface INode {
     keep: boolean
@@ -17,16 +17,13 @@ export interface IExtraction {
 }
 
 export default class Inspector {
-    logger: Logger
     collection: INode[] = []
 
-    constructor(logger: Logger) { 
-        this.logger = logger;
-
-        this.logger.debug('Instantiating inspector...');
+    constructor() {
+        logger.debug('Instantiating inspector...');
     }
 
-    init(ast: estree.Program): void {        
+    init(ast: estree.Program): void {
         this.analyzeStream(this.arrayToStream(ast.body));
     }
 
@@ -39,7 +36,7 @@ export default class Inspector {
                     'argument'
                 ];
                 let children: estree.Node[] = [];
-                
+
                 props.forEach((prop: string) => {
                     children.concat(this.extractFrom(item, prop));
                     delete item.value[prop];
@@ -70,7 +67,8 @@ export default class Inspector {
             }
             return item;
         });
-        this.logger.debug('Marked live nodes');
+
+        logger.log('Marked live nodes');
     }
 
     enrichNode(item: estree.Node, parentLoc: estree.SourceLocation = null): INode {
@@ -88,7 +86,7 @@ export default class Inspector {
 
         if (item.value.hasOwnProperty(prop)) {
             children = [item.value[prop]];
-            
+
             if (Array.isArray(item.value[prop])) {
                 children = [...item.value[prop]];
             }
@@ -108,6 +106,6 @@ export default class Inspector {
 
     shake(): void {
         this.collection = this.collection.filter((item: INode) => item.keep);
-        this.logger.debug('Removed unnecessary nodes');
+        logger.log('Removed unnecessary nodes');
     }
 }

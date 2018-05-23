@@ -2,12 +2,12 @@ import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { Observable, Subject } from 'rxjs/Rx';
 import Stream from './stream';
-import Logger from './logger';
 import Monitor from './monitor';
 import Resolver from './resolver';
 import * as acorn from 'acorn';
 import * as estree from 'estree';
 import { visitAST } from './recast-util';
+import * as logger from './logger';
 
 export interface IFile {
     fullPath: string
@@ -18,16 +18,15 @@ export interface IModule extends IFile {
     ast: estree.Program
 }
 
-export default class Crawler extends Stream<IModule> { 
-    readonly logger: Logger
+export default class Crawler extends Stream<IModule> {
     readonly resolver: Resolver
     readonly monitor: Monitor<string>
     readonly entryPoint: string
     readonly encoding: string
     readonly stream: Subject<string>
 
-    constructor(logger: Logger, resolver: Resolver, monitor: Monitor<string>, entryPoint: string, encoding: string = 'utf8') {
-        super(logger);
+    constructor(resolver: Resolver, monitor: Monitor<string>, entryPoint: string, encoding: string = 'utf8') {
+        super();
 
         this.resolver = resolver;
         this.monitor = monitor;
@@ -35,7 +34,7 @@ export default class Crawler extends Stream<IModule> {
         this.encoding = encoding;
         this.stream = new Subject<string>();
 
-        this.logger.debug('Instantiating crawler...');
+        logger.debug('Instantiating crawler...');
     }
 
     init(): void {
@@ -48,13 +47,13 @@ export default class Crawler extends Stream<IModule> {
             .map((fullPath: string) => this.readFile(fullPath))
             .map((file: IFile) => this.getModule(file))
             .share();
-        
+
         this.monitorize(observable);
         return observable;
     }
 
-    protected crawl(fullPath: string): void { 
-        this.logger.info(`Crawling into ${fullPath}...`);
+    protected crawl(fullPath: string): void {
+        logger.info(`Crawling into ${fullPath}...`);
         this.monitor.add(fullPath);
         this.stream.next(fullPath);
     }
@@ -65,7 +64,7 @@ export default class Crawler extends Stream<IModule> {
                 this.monitor.logStatus();
                 this.monitor.consume(module.fullPath);
                 this.getDeps(module).map((fullPath: string) => this.crawl(fullPath));
-                
+
                 setTimeout(() => {
                     if (this.monitor.isConsumed) {
                         this.stream.complete();
@@ -79,7 +78,7 @@ export default class Crawler extends Stream<IModule> {
     }
 
     protected readFile(fullPath: string): IFile {
-        this.logger.log(`Reading file ${fullPath}...`);
+        logger.log(`Reading file ${fullPath}...`);
 
         return <IFile>{
             fullPath,
@@ -87,8 +86,8 @@ export default class Crawler extends Stream<IModule> {
         };
     }
 
-    protected getModule(file: IFile): IModule { 
-        this.logger.log(`Getting AST for ${file.fullPath}...`);
+    protected getModule(file: IFile): IModule {
+        logger.log(`Getting AST for ${file.fullPath}...`);
 
         return <IModule>Object.assign({}, file, {
             ast: this.getAST(file)
@@ -105,9 +104,9 @@ export default class Crawler extends Stream<IModule> {
         });
     }
 
-    protected getDeps(module: IModule): string[] { 
+    protected getDeps(module: IModule): string[] {
         const dependencyFullPaths: string[] = [];
-        this.logger.log(`Looking for deps in ${module.fullPath}...`);
+        logger.log(`Looking for deps in ${module.fullPath}...`);
 
         const importDeclarationCallback = (nodePath): void => {
             if (nodePath && nodePath.value && nodePath.value.source && nodePath.value.source.value && nodePath.value.loc && nodePath.value.loc.source) {
@@ -117,8 +116,8 @@ export default class Crawler extends Stream<IModule> {
         };
 
         visitAST(module.ast, 'ImportDeclaration', importDeclarationCallback);
-        this.logger.debug(`-> ${dependencyFullPaths.length} deps found`);
+        logger.debug(`-> ${dependencyFullPaths.length} deps found`);
 
-        return dependencyFullPaths;          
+        return dependencyFullPaths;
     }
 }
