@@ -13,7 +13,7 @@ export default class Inspector extends Stream<Collection> {
         super();
         this.crawler = crawler;
 
-        logger.debug('Instantiating evaluator...');
+        logger.debug('Instantiating inspector...');
     }
 
     init(): void {
@@ -27,12 +27,13 @@ export default class Inspector extends Stream<Collection> {
     }
 
     enrich(module: IModule): Collection {
-        logger.info(`Evaluating ${module.fullPath}...`);
+        logger.info(`Inspecting AST in ${module.fullPath}...`);
 
         const collection = new Collection(module);
-        collection.markAliveNodes();
+        collection.prune();
+        logger.log('Nodes:', collection.length);
+        logger.log('Alive:', collection.getAliveNodes().length);
 
-        // logger.explode(...collection.shake());
         return collection;
     }
 

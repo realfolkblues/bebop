@@ -4,7 +4,7 @@ import Node from './node';
 import * as logger from './logger';
 
 export default class Collection {
-    protected module: IModule
+    module: IModule
     protected collection: Node[]
 
     constructor(module: IModule) {
@@ -43,7 +43,7 @@ export default class Collection {
         return flatten(this.collection, this.collection);
     }
 
-    markAliveNodes(): void {
+    prune(): void {
         logger.log('Mark live nodes');
 
         this.getFlatCollection().forEach((node: Node) => {
@@ -53,8 +53,11 @@ export default class Collection {
         });
     }
 
-    shake(): Node[] {
-        logger.log('Remove unnecessary nodes');
-        return this.collection.filter((item: Node) => item.isAlive);
+    getAliveNodes(): Node[] {
+        return this.getFlatCollection().filter((item: Node) => item.isAlive);
+    }
+
+    get length(): number {
+        return this.collection.length;
     }
 }

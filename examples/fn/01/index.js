@@ -1,4 +1,5 @@
 import { name, doublePlusOne } from './lib';
+import { log } from './lib2';
 
-console.log(name());
-console.log(doublePlusOne(8));
+log(name());
+log(doublePlusOne(8));

@@ -1,3 +1,8 @@
+import { log } from './lib2';
+
+function test() {
+    log('Hello world!');
+}
 
 function addX(n, x) {
     return n + x;

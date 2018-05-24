@@ -3,6 +3,7 @@ import Monitor from './monitor';
 import Resolver from './resolver';
 import Crawler from './crawler';
 import Inspector from './inspector';
+import Linker from './linker';
 import registerUtils from './jscodeshift-util';
 import * as logger from './logger';
 
@@ -18,12 +19,13 @@ const resolver = new Resolver(cwd);
 const monitor = new Monitor<string>();
 const crawler = new Crawler(resolver, monitor, entryPointFullPath);
 const inspector = new Inspector(crawler);
+const linker = new Linker(inspector);
 
-const stream = inspector.get();
+const stream = linker.get();
 
 stream.subscribe({
     next: (param: any) => {
-        // console.log(param);
+        logger.info(`Collection ${param.module.fullPath} linked`);
     },
     error: (err: Error) => {
         logger.error(err);
@@ -33,4 +35,4 @@ stream.subscribe({
     }
 });
 
-inspector.init();
+linker.init();

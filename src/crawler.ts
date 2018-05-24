@@ -16,6 +16,7 @@ export interface IFile {
 
 export interface IModule extends IFile {
     ast: estree.Program
+    dependencyPaths: string[]
 }
 
 export default class Crawler extends Stream<IModule> {
@@ -63,7 +64,7 @@ export default class Crawler extends Stream<IModule> {
             next: (module: IModule) => {
                 this.monitor.logStatus();
                 this.monitor.consume(module.fullPath);
-                this.getDeps(module).map((fullPath: string) => this.crawl(fullPath));
+                module.dependencyPaths.map((fullPath: string) => this.crawl(fullPath));
 
                 setTimeout(() => {
                     if (this.monitor.isConsumed) {
@@ -89,8 +90,12 @@ export default class Crawler extends Stream<IModule> {
     protected getModule(file: IFile): IModule {
         logger.log(`Getting AST for ${file.fullPath}...`);
 
+        const ast = this.getAST(file);
+        const dependencyPaths = this.getDeps(file.fullPath, ast);
+
         return <IModule>Object.assign({}, file, {
-            ast: this.getAST(file)
+            ast,
+            dependencyPaths
         });
     }
 
@@ -104,9 +109,9 @@ export default class Crawler extends Stream<IModule> {
         });
     }
 
-    protected getDeps(module: IModule): string[] {
+    protected getDeps(filePath: string, ast: estree.Program): string[] {
         const dependencyFullPaths: string[] = [];
-        logger.log(`Looking for deps in ${module.fullPath}...`);
+        logger.log(`Looking for deps in ${filePath}...`);
 
         const importDeclarationCallback = (nodePath): void => {
             if (nodePath && nodePath.value && nodePath.value.source && nodePath.value.source.value && nodePath.value.loc && nodePath.value.loc.source) {
@@ -115,7 +120,7 @@ export default class Crawler extends Stream<IModule> {
             }
         };
 
-        visitAST(module.ast, 'ImportDeclaration', importDeclarationCallback);
+        visitAST(ast, 'ImportDeclaration', importDeclarationCallback);
         logger.debug(`-> ${dependencyFullPaths.length} deps found`);
 
         return dependencyFullPaths;
