@@ -1,113 +1,40 @@
-import * as estree from 'estree';
+import * as jscodeshift from 'jscodeshift';
 import { Observable, Subject } from 'rxjs/Rx';
-import Logger from './logger';
 import Stream from './stream';
+import Crawler, { IModule } from './crawler';
+import Collection from './collection';
+import Node from './node';
+import * as logger from './logger';
 
-export interface INode {
-    keep: boolean
-    loc: estree.SourceLocation
-    parentLoc: estree.SourceLocation
-    type: string
-    value: estree.Node
-}
+export default class Inspector extends Stream<Collection> {
+    crawler: Crawler
 
-export interface IExtraction {
-    node: INode
-    children: estree.Node[]
-}
+    constructor(crawler: Crawler) {
+        super();
+        this.crawler = crawler;
 
-export default class Inspector {
-    logger: Logger
-    collection: INode[] = []
-
-    constructor(logger: Logger) { 
-        this.logger = logger;
-
-        this.logger.debug('Instantiating inspector...');
+        logger.debug('Instantiating inspector...');
     }
 
-    init(ast: estree.Program): void {        
-        this.analyzeStream(this.arrayToStream(ast.body));
+    init(): void {
+        this.crawler.init();
     }
 
-    analyzeStream(stream: Observable<INode>): void {
-        stream.subscribe({
-            next: (item: INode): void => {
-                const props: string[] = [
-                    'body',
-                    'arguments',
-                    'argument'
-                ];
-                let children: estree.Node[] = [];
-                
-                props.forEach((prop: string) => {
-                    children.concat(this.extractFrom(item, prop));
-                    delete item.value[prop];
-                });
-
-                if (children.length > 0) {
-                    this.analyzeStream(this.arrayToStream(children));
-                }
-                this.collection.push(item);
-            }
-        });
+    get(): Observable<Collection> {
+        return this.crawler
+            .get()
+            .map((module: IModule) => this.enrich(module));
     }
 
-    arrayToStream(array: estree.Node[]): Observable<INode> {
-        return Observable
-            .from(array)
-            .map((item: estree.Node): INode => this.enrichNode(item));
+    enrich(module: IModule): Collection {
+        logger.info(`Inspecting AST in ${module.fullPath}...`);
+
+        const collection = new Collection(module);
+        collection.prune();
+        logger.log('Nodes:', collection.length);
+        logger.log('Alive:', collection.getAliveNodes().length);
+
+        return collection;
     }
 
-    children(parent: INode): INode[] {
-        return this.collection.filter((item: INode) => item.parentLoc === parent.loc);
-    }
-
-    comb(): void {
-        this.collection = this.collection.map((item: INode) => {
-            if (item.type === 'ExportNamedDeclaration') {
-                this.markNode(item);
-            }
-            return item;
-        });
-        this.logger.debug('Marked live nodes');
-    }
-
-    enrichNode(item: estree.Node, parentLoc: estree.SourceLocation = null): INode {
-        return <INode>{
-            keep: false,
-            loc: item.loc,
-            parentLoc: parentLoc,
-            type: item.type,
-            value: item
-        };
-    }
-
-    extractFrom(item: INode, prop: string): estree.Node[] {
-        let children: estree.Node[] = [];
-
-        if (item.value.hasOwnProperty(prop)) {
-            children = [item.value[prop]];
-            
-            if (Array.isArray(item.value[prop])) {
-                children = [...item.value[prop]];
-            }
-        }
-
-        return children;
-    }
-
-    markNode(item: INode): INode {
-        item.keep = true;
-        return item;
-    }
-
-    parent(child: INode): INode {
-        return this.collection.find((item: INode) => item.loc === child.parentLoc);
-    }
-
-    shake(): void {
-        this.collection = this.collection.filter((item: INode) => item.keep);
-        this.logger.debug('Removed unnecessary nodes');
-    }
 }

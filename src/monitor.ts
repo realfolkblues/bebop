@@ -1,34 +1,33 @@
-import Logger from './logger';
+import * as logger from './logger';
 
-export default class Monitor<T> { 
-    readonly logger: Logger
+export default class Monitor<T> {
     readonly registry: Map<T, boolean>
 
-    constructor(logger: Logger) { 
-        this.logger = logger;
+    constructor() {
         this.registry = new Map<T, boolean>();
 
-        this.logger.debug('Instantiating monitor...');
+        logger.debug('Instantiating monitor...');
     }
 
-    add(key: T): T { 
+    add(key: T): T {
         this.registry.set(key, false);
         return key;
     }
 
-    consume(key: T): T { 
+    consume(key: T): T {
         this.registry.set(key, true);
         return key;
     }
 
-    logStatus() { 
-        this.logger.debug('Monitor status:');
+    logStatus() {
+        logger.debug('Monitor status:');
+
         this.registry.forEach((value: boolean, key: T) => {
-            this.logger.debug(`- ${key}:`, value ? 'processed' : 'in queue...');
+            logger.debug(`- ${key}:`, value ? 'processed' : 'in queue...');
         });
     }
 
-    get isConsumed(): boolean { 
+    get isConsumed(): boolean {
         return Array.from(this.registry.values()).every((isConsumed: boolean) => !!isConsumed);
     }
 }

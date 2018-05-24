@@ -1,40 +1,34 @@
 import * as chalk from 'chalk';
 import { inspect } from 'util';
 
-const debug = chalk.dim;
-const log = chalk.cyan;
-const info = chalk.green;
-const warn = chalk.yellow;
-const error = chalk.red;
+const color = {
+    debug: chalk.dim,
+    log: chalk.cyan,
+    info: chalk.green,
+    warn: chalk.yellow,
+    error: chalk.red
+}
 
-export default class Logger { 
+export function debug(...args: any[]): void {
+    console.log(color.debug(...args));
+}
 
-    constructor() { 
-        this.debug('Instantiating logger...');
-    }
+export function log(...args: any[]): void {
+    console.log(color.log(...args));
+}
 
-    debug(...args: any[]): void {
-        console.log(debug(...args));
-    }
+export function info(...args: any[]) {
+    console.info(color.info('\u25B6', ...args));
+}
 
-    log(...args: any[]): void { 
-        console.log(log(...args));
-    }
+export function warn(...args: any[]): void {
+    console.warn(color.warn(...args));
+}
 
-    info(...args: any[]) {
-        console.info(info('\u25B6', ...args));
-    }
+export function error(...args: any[]): void {
+    console.error(color.error(...args));
+}
 
-    warn(...args: any[]): void {
-        console.warn(warn(...args));
-    }
-
-    error(...args: any[]): void { 
-        console.error(error(...args));
-    }
-
-    explode(...args: any[]): void {
-        [...args].map((item) => this.debug(inspect(item)));
-    }
-    
+export function explode(...args: any[]): void {
+    [...args].map((item) => debug(inspect(item)));
 }
