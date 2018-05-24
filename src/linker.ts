@@ -9,14 +9,12 @@ import * as logger from './logger';
 export default class Linker extends Stream<Collection> {
     readonly inspector: Inspector
     readonly registry: Map<string, Collection>
-    readonly depRegistry: Map<string, string[]>
     readonly stream: Subject<Collection>
 
     constructor(inspector: Inspector) {
         super();
         this.inspector = inspector;
         this.registry = new Map<string, Collection>();
-        this.depRegistry = new Map<string, string[]>();
         this.stream = new Subject<Collection>();
 
         logger.debug('Instantiating linker...');
