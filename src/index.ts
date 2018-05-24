@@ -2,9 +2,8 @@ import { join } from 'path';
 import Monitor from './monitor';
 import Resolver from './resolver';
 import Crawler from './crawler';
-import Evaluator from './evaluator';
-import registerUtils from './jscodeshift-util';
 import Inspector from './inspector';
+import registerUtils from './jscodeshift-util';
 import * as logger from './logger';
 
 console.log('== BEGIN ============================================================');
@@ -18,10 +17,9 @@ const entryPointFullPath = join(cwd, entryPointPath);
 const resolver = new Resolver(cwd);
 const monitor = new Monitor<string>();
 const crawler = new Crawler(resolver, monitor, entryPointFullPath);
-const inspector = new Inspector();
-const evaluator = new Evaluator(crawler, inspector);
+const inspector = new Inspector(crawler);
 
-const stream = evaluator.get();
+const stream = inspector.get();
 
 stream.subscribe({
     next: (param: any) => {
@@ -35,4 +33,4 @@ stream.subscribe({
     }
 });
 
-evaluator.init();
+inspector.init();

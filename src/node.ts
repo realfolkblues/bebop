@@ -1,15 +1,19 @@
 import * as estree from 'estree';
-import { Observable, Subject } from 'rxjs/Rx';
-import Stream from './stream';
-import { IModule } from './crawler';
 import * as logger from './logger';
 
+const props: string[] = [
+    'body',
+    'arguments',
+    'argument'
+];
+
 export default class Node {
-    protected alive: boolean
     readonly value: estree.Node
     readonly loc: estree.SourceLocation
     readonly parentLoc: estree.SourceLocation | null
     readonly type: string
+    protected alive: boolean
+    protected childrenNodes: Node[]
 
     constructor(node: estree.Node, parent: estree.Node = null) {
         this.value = node;
@@ -17,12 +21,27 @@ export default class Node {
         this.parentLoc = !!parent ? parent.loc : null;
         this.type = node.type
         this.alive = false;
+        this.childrenNodes = [];
+
+        this.populate();
+
         logger.debug('Instantiating node...');
     }
 
-    // children(parent: INode): INode[] {
-    //     return this.collection.filter((item: INode) => item.parentLoc === parent.loc);
-    // }
+    protected populate(): void {
+        props.forEach((prop: string) => {
+            if (this.value.hasOwnProperty(prop)) {
+                const childrenNodes = Array.isArray(this.value[prop]) ? this.value[prop] : [this.value[prop]];
+
+                this.childrenNodes = [
+                    ...this.childrenNodes,
+                    ...childrenNodes.map((childNode: estree.Node) => new Node(childNode, this.value))
+                ];
+            }
+
+            // delete item.value[prop];
+        });
+    }
 
     markAsAlive(): void {
         this.alive = true;
@@ -40,7 +59,7 @@ export default class Node {
         return this.alive;
     }
 
-    // parent(child: INode): INode {
-    //     return this.collection.find((item: INode) => item.loc === child.parentLoc);
-    // }
+    get children(): Node[] {
+        return this.childrenNodes;
+    }
 }

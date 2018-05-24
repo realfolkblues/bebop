@@ -1,19 +1,16 @@
 import * as estree from 'estree';
-import { Observable, Subject } from 'rxjs/Rx';
-import Stream from './stream';
 import { IModule } from './crawler';
 import Node from './node';
 import * as logger from './logger';
 
-export interface IExtraction {
-    node: Node
-    children: estree.Node[]
-}
-
 export default class Collection {
-    private collection: Node[] = []
+    protected module: IModule
+    protected collection: Node[]
 
-    constructor() {
+    constructor(module: IModule) {
+        this.module = module;
+        this.collection = module.ast.body.map((node: estree.Node) => new Node(node));
+
         logger.debug('Instantiating collection...');
     }
 
@@ -25,19 +22,39 @@ export default class Collection {
         return this.collection.find((node: Node) => node.isParentOf(child));
     }
 
-    comb(): void {
-        this.collection = this.collection.map((item: Node) => {
-            if (item.type === 'ExportNamedDeclaration') {
-                item.markAsAlive();
-            }
-            return item;
-        });
+    getFlatCollection(): Node[] {
+        function getFlatChildrenArray(nodes: Node[]): Node[] {
+            return nodes.reduce((children: Node[], node: Node) => children.concat(node.children), []);
+        }
 
-        logger.log('Marked live nodes');
+        function flatten(nodes: Node[], nodesToFlatten: Node[]) {
+            const childrenNodes = getFlatChildrenArray(nodesToFlatten);
+
+            if (childrenNodes.length === 0) {
+                return nodes;
+            }
+
+            return flatten([
+                ...nodes,
+                ...childrenNodes
+            ], childrenNodes);
+        }
+
+        return flatten(this.collection, this.collection);
     }
 
-    shake(): void {
-        this.collection = this.collection.filter((item: Node) => item.isAlive);
-        logger.log('Removed unnecessary nodes');
+    markAliveNodes(): void {
+        logger.log('Mark live nodes');
+
+        this.getFlatCollection().forEach((node: Node) => {
+            if (node.type === 'ExportNamedDeclaration') {
+                node.markAsAlive();
+            }
+        });
+    }
+
+    shake(): Node[] {
+        logger.log('Remove unnecessary nodes');
+        return this.collection.filter((item: Node) => item.isAlive);
     }
 }
