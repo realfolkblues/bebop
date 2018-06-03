@@ -27,7 +27,7 @@ export default class Collection {
             return nodes.reduce((children: Node[], node: Node) => children.concat(node.children), []);
         }
 
-        function flatten(nodes: Node[], nodesToFlatten: Node[]) {
+        function flatten(nodes: Node[], nodesToFlatten: Node[]): Node[]  {
             const childrenNodes = getFlatChildrenArray(nodesToFlatten);
 
             if (childrenNodes.length === 0) {
@@ -43,10 +43,12 @@ export default class Collection {
         return flatten(this.collection, this.collection);
     }
 
-    prune(): void {
+    markAliveNodes(): void {
         logger.log('Mark live nodes');
 
-        this.getFlatCollection().forEach((node: Node) => {
+        let flatCollection: Node[] = this.getFlatCollection();
+
+        flatCollection.forEach((node: Node) => {
             if (node.type === 'ExportNamedDeclaration') {
                 node.markAsAlive();
             }
