@@ -53,7 +53,8 @@ export default class Collection {
                 logger.info('Detected exported named declaration');
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
-                logger.info('Detected call expression');
+                const callee: string = node.value['callee'].name;
+                logger.info('Detected call expression:', callee);
             } else if (node.type === 'ReturnStatement') {
                 logger.info('Detected return statement');
             }
