@@ -27,7 +27,11 @@ export default class Collection {
             return nodes.reduce((children: Node[], node: Node) => children.concat(node.children), []);
         }
 
+<<<<<<< HEAD
         function flatten(nodes: Node[], nodesToFlatten: Node[]): Node[] {
+=======
+        function flatten(nodes: Node[], nodesToFlatten: Node[]): Node[]  {
+>>>>>>> eb2b45264807723029e419786e3bf60f3660e1ee
             const childrenNodes = getFlatChildrenArray(nodesToFlatten);
 
             if (childrenNodes.length === 0) {
