@@ -54,7 +54,7 @@ export default class Collection {
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
                 const callee: string = node.value['callee'].name;
-                logger.info('Detected call expression:', callee);
+                logger.info('Detected call expression [', callee, '] at line', node.loc.start.line);
             } else if (node.type === 'ReturnStatement') {
                 logger.info('Detected return statement');
             }
