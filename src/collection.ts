@@ -6,10 +6,12 @@ import * as logger from './logger';
 export default class Collection {
     module: IModule
     protected collection: Node[]
+    protected exportedNodes: Node[]
 
     constructor(module: IModule) {
         this.module = module;
         this.collection = module.ast.body.map((node: estree.Node) => new Node(node));
+        this.exportedNodes = [];
 
         logger.debug('Instantiating collection...');
     }
@@ -49,6 +51,9 @@ export default class Collection {
         this.getFlatCollection().forEach((node: Node) => {
             if (node.type === 'ExportNamedDeclaration') {
                 node.markAsAlive();
+                const value = <estree.ExportNamedDeclaration>node.value;
+                console.log(value.declaration);
+                this.exportedNodes.push(node);
             }
         });
     }
