@@ -49,14 +49,15 @@ export default class Collection {
         let flatCollection: Node[] = this.getFlatCollection();
 
         flatCollection.forEach((node: Node) => {
+            logger.debug('Node [', node.type, '] at', node.loc.start.line);
             if (node.type === 'ExportNamedDeclaration') {
-                logger.info('Detected exported named declaration');
+                logger.info('Detected exported named declaration at line', node.loc.start.line);
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
                 const callee: string = node.value['callee'].name;
                 logger.info('Detected call expression [', callee, '] at line', node.loc.start.line);
             } else if (node.type === 'ReturnStatement') {
-                logger.info('Detected return statement');
+                logger.info('Detected return statement at line', node.loc.start.line);
             }
         });
     }
