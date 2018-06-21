@@ -23,11 +23,11 @@ export default class Collection {
     }
 
     getFlatCollection(): Node[] {
-        function getFlatChildrenArray(nodes: Node[]): Node[] {
+        const getFlatChildrenArray = (nodes: Node[]): Node[] => {
             return nodes.reduce((children: Node[], node: Node) => children.concat(node.children), []);
-        }
+        };
 
-        function flatten(nodes: Node[], nodesToFlatten: Node[]): Node[] {
+        const flatten = (nodes: Node[], nodesToFlatten: Node[]): Node[] => {
             const childrenNodes = getFlatChildrenArray(nodesToFlatten);
 
             if (childrenNodes.length === 0) {
@@ -38,7 +38,7 @@ export default class Collection {
                 ...nodes,
                 ...childrenNodes
             ], childrenNodes);
-        }
+        };
 
         return flatten(this.collection, this.collection);
     }
