@@ -5,13 +5,13 @@ import * as logger from './logger';
 
 export default class Collection {
     module: IModule
-    protected collection: Node[]
-    protected exportedNodes: Node[]
+    protected readonly collection: Node[]
+    protected readonly array: Node[]
 
     constructor(module: IModule) {
         this.module = module;
         this.collection = module.ast.body.map((node: estree.Node) => new Node(node));
-        this.exportedNodes = [];
+        this.array = this.getFlatCollection();
 
         logger.debug('Instantiating collection...');
     }
@@ -45,24 +45,21 @@ export default class Collection {
         return flatten(this.collection, this.collection);
     }
 
-    prune(): void {
-        logger.log('Mark live nodes');
+    markAliveNodes(): void {
+        logger.log('Mark exported nodes as alive');
 
-        this.getFlatCollection().forEach((node: Node) => {
+        this.array.forEach((node: Node) => {
             if (node.type === 'ExportNamedDeclaration') {
                 node.markAsAlive();
-                const value = <estree.ExportNamedDeclaration>node.value;
-                console.log(value.declaration);
-                this.exportedNodes.push(node);
             }
         });
     }
 
     getAliveNodes(): Node[] {
-        return this.getFlatCollection().filter((item: Node) => item.isAlive);
+        return this.array.filter((node: Node) => node.isAlive);
     }
 
     get length(): number {
-        return this.collection.length;
+        return this.array.length;
     }
 }

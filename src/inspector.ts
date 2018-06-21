@@ -30,7 +30,7 @@ export default class Inspector extends Stream<Collection> {
         logger.info(`Inspecting AST in ${module.fullPath}...`);
 
         const collection = new Collection(module);
-        collection.prune();
+        collection.markAliveNodes();
         logger.log('Nodes:', collection.length);
         logger.log('Alive:', collection.getAliveNodes().length);
 
