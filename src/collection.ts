@@ -15,7 +15,7 @@ export default class Collection {
     }
 
     getChildrenOf(parent: Node): Node[] {
-        return this.collection.filter((node: Node) => node.isChildrenOf(parent));
+        return this.collection.filter((node: Node) => node.isChildOf(parent));
     }
 
     getParentOf(child: Node): Node {

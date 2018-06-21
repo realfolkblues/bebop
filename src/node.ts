@@ -51,7 +51,7 @@ export default class Node {
         return !!this.loc && this.loc === child.parentLoc;
     }
 
-    isChildrenOf(parent: Node): boolean {
+    isChildOf(parent: Node): boolean {
         return !!this.parentLoc && this.parentLoc === parent.loc;
     }
 
