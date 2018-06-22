@@ -4,43 +4,49 @@ import * as logger from './logger';
 const props: string[] = [
     'body',
     'arguments',
-    'argument'
+    'argument',
+    'expression',
+    'callee',
+    'specifiers',
+    'declaration'
 ];
 
 export default class Node {
-    readonly value: estree.Node
-    readonly loc: estree.SourceLocation
-    readonly parentLoc: estree.SourceLocation | null
+    readonly node: estree.Node
     readonly type: string
+    readonly location: estree.SourceLocation
+    readonly parentLocation: estree.SourceLocation | null
+    readonly children: Node[]
     protected alive: boolean
-    protected childrenNodes: Node[]
 
-    constructor(node: estree.Node, parent: estree.Node = null) {
-        this.value = node;
-        this.loc = node.loc;
-        this.parentLoc = !!parent ? parent.loc : null;
+    constructor(node: estree.Node, parent: Node = null) {
+        this.node = node;
         this.type = node.type
+        this.location = node.loc;
+        this.parentLocation = !!parent ? parent.location : null;
+        this.children = this.extractChildren();
         this.alive = false;
-        this.childrenNodes = [];
-
-        this.populate();
 
         logger.debug('Instantiating node...');
     }
 
-    protected populate(): void {
+    protected extractChildren(): Node[] {
+        let children = [];
+
         props.forEach((prop: string) => {
-            if (this.value.hasOwnProperty(prop)) {
-                const childrenNodes = Array.isArray(this.value[prop]) ? this.value[prop] : [this.value[prop]];
+            if (!!this.node && prop in this.node) {
+                const nodes = Array.isArray(this.node[prop]) ? this.node[prop] : [this.node[prop]];
 
-                this.childrenNodes = [
-                    ...this.childrenNodes,
-                    ...childrenNodes.map((childNode: estree.Node) => new Node(childNode, this.value))
+                children = [
+                    ...children,
+                    ...nodes.map((node: estree.Node) => new Node(node, this))
                 ];
-            }
 
-            // delete item.value[prop];
+                delete this.node[prop];
+            }
         });
+
+        return children;
     }
 
     markAsAlive(): void {
@@ -48,18 +54,14 @@ export default class Node {
     }
 
     isParentOf(child: Node): boolean {
-        return !!this.loc && this.loc === child.parentLoc;
+        return !!this.location && this.location === child.parentLocation;
     }
 
     isChildOf(parent: Node): boolean {
-        return !!this.parentLoc && this.parentLoc === parent.loc;
+        return !!this.parentLocation && this.parentLocation === parent.location;
     }
 
     get isAlive(): boolean {
         return this.alive;
-    }
-
-    get children(): Node[] {
-        return this.childrenNodes;
     }
 }

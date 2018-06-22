@@ -5,11 +5,13 @@ import * as logger from './logger';
 
 export default class Collection {
     module: IModule
-    protected collection: Node[]
+    protected readonly collection: Node[]
+    protected readonly array: Node[]
 
     constructor(module: IModule) {
         this.module = module;
         this.collection = module.ast.body.map((node: estree.Node) => new Node(node));
+        this.array = this.getFlatCollection();
 
         logger.debug('Instantiating collection...');
     }
@@ -49,24 +51,23 @@ export default class Collection {
         let flatCollection: Node[] = this.getFlatCollection();
 
         flatCollection.forEach((node: Node) => {
-            logger.debug('Node [', node.type, '] at', node.loc.start.line);
+            logger.debug('Node [', node.type, '] at', node.location.start.line);
             if (node.type === 'ExportNamedDeclaration') {
-                logger.info('Detected exported named declaration at line', node.loc.start.line);
+                logger.info('Detected exported named declaration at line', node.location.start.line);
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
-                const callee: string = node.value['callee'].name;
-                logger.info('Detected call expression [', callee, '] at line', node.loc.start.line);
+                
             } else if (node.type === 'ReturnStatement') {
-                logger.info('Detected return statement at line', node.loc.start.line);
+                logger.info('Detected return statement at line', node.location.start.line);
             }
         });
     }
 
     getAliveNodes(): Node[] {
-        return this.getFlatCollection().filter((item: Node) => item.isAlive);
+        return this.array.filter((node: Node) => node.isAlive);
     }
 
     get length(): number {
-        return this.collection.length;
+        return this.array.length;
     }
 }
