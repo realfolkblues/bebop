@@ -52,7 +52,7 @@ export default class Collection {
 
         flatCollection.forEach((node: Node) => {
             if (node.type === 'ExportNamedDeclaration') {
-                logger.info('Detected exported named declaration at line', node.location.start.line);
+                logger.info('Detected export named declaration at line', node.location.start.line);
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
                 logger.info('Detected call expression at line', node.location.start.line);
