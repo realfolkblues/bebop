@@ -51,12 +51,11 @@ export default class Collection {
         let flatCollection: Node[] = this.getFlatCollection();
 
         flatCollection.forEach((node: Node) => {
-            logger.debug('Node [', node.type, '] at', node.location.start.line);
             if (node.type === 'ExportNamedDeclaration') {
                 logger.info('Detected exported named declaration at line', node.location.start.line);
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
-                
+                logger.info('Detected call expression at line', node.location.start.line);
             } else if (node.type === 'ReturnStatement') {
                 logger.info('Detected return statement at line', node.location.start.line);
             }
