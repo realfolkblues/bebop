@@ -2,7 +2,8 @@
     "compilerOptions": {
         "outDir": "dist",
         "module": "commonjs",
-        "target": "es2015"
+        "target": "es2015",
+        "sourceMap": true
     },
     "include": [
         "src/**/*.ts"
