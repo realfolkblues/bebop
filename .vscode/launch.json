@@ -14,6 +14,18 @@
             "outFiles": [
                 "${workspaceFolder}/dist/*.js"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "TS Debug WSL",
+            "program": "${workspaceFolder}/src/index.ts",
+            "cwd": "${workspaceFolder}",
+            "protocol": "inspector",
+            "outFiles": [
+                "${workspaceFolder}/dist/*.js"
+            ],
+            "useWSL": true
         }
     ]
 }
