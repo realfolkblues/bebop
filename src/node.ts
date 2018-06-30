@@ -16,14 +16,16 @@ export default class Node {
     readonly type: string
     readonly location: estree.SourceLocation
     readonly parentLocation: estree.SourceLocation | null
+    readonly origin: string | null
     readonly children: Node[]
     protected alive: boolean
 
-    constructor(node: estree.Node, parent: Node = null) {
+    constructor(node: estree.Node, parent: Node = null, origin: string = null) {
         this.node = node;
         this.type = node.type
         this.location = node.loc;
         this.parentLocation = !!parent ? parent.location : null;
+        this.origin = origin;
         this.children = this.extractChildren();
         this.alive = false;
 
@@ -31,15 +33,15 @@ export default class Node {
     }
 
     protected extractChildren(): Node[] {
-        let children = [];
+        let children: Node[] = [];
 
         props.forEach((prop: string) => {
             if (!!this.node && prop in this.node) {
-                const nodes = Array.isArray(this.node[prop]) ? this.node[prop] : [this.node[prop]];
+                const nodes: estree.Node[] = Array.isArray(this.node[prop]) ? this.node[prop] : [this.node[prop]];
 
                 children = [
                     ...children,
-                    ...nodes.map((node: estree.Node) => new Node(node, this))
+                    ...nodes.map((node: estree.Node) => new Node(node, this, prop))
                 ];
 
                 delete this.node[prop];
