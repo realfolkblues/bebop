@@ -17,11 +17,11 @@ export default class Collection {
     }
 
     getChildrenOf(parent: Node): Node[] {
-        return this.collection.filter((node: Node) => node.isChildOf(parent));
+        return this.array.filter((node: Node) => node.isChildOf(parent));
     }
 
     getParentOf(child: Node): Node {
-        return this.collection.find((node: Node) => node.isParentOf(child));
+        return this.array.find((node: Node) => node.isParentOf(child));
     }
 
     getFlatCollection(): Node[] {
@@ -45,15 +45,30 @@ export default class Collection {
         return flatten(this.collection, this.collection);
     }
 
+    getClosestDeclaration(startingNode: Node, currentNode: Node): Node {
+        let result = null;
+
+        if (startingNode.node['name']) {
+            this.getClosestDeclaration(startingNode, this.getParentOf(startingNode));
+        }
+
+        return result;
+    }
+
     markAliveNodes(): void {
         logger.log('Mark live nodes');
 
-        this.array.forEach((node: Node) => {
+        const nodes: Node[] = [...this.array];
+
+        nodes.forEach((node: Node) => {
             if (node.type === 'ExportNamedDeclaration') {
                 logger.info(`Detected [${node.type}] at line ${node.location.start.line}`);
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
-                logger.info(`Detected [${node.type}] at line ${node.location.start.line}`);
+                const callee: Node = node.children.find((child: Node) => child.type === 'Identifier' && child.origin === 'callee');
+                // const closestDeclaration: Node = this.getClosestDeclaration(callee, callee);
+
+                logger.info(`Detected [${node.type}] at line ${node.location.start.line}: ${callee.node['name']}`);
             } else if (node.type === 'ReturnStatement') {
                 logger.info(`Detected [${node.type}] at line ${node.location.start.line}`);
             }
