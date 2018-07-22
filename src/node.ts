@@ -2,13 +2,14 @@ import * as estree from 'estree';
 import * as logger from './logger';
 
 const props: string[] = [
-    'body',
-    'arguments',
     'argument',
-    'expression',
+    'arguments',
+    'body',
     'callee',
-    'specifiers',
-    'declaration'
+    'declaration',
+    'expression',
+    'id',
+    'specifiers'
 ];
 
 export default class Node {

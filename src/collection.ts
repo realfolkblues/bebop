@@ -24,6 +24,16 @@ export default class Collection {
         return this.array.find((node: Node) => node.isParentOf(child));
     }
 
+    getIdOf(node: Node): Node {
+        let result = null;
+
+        if (node && node.children.length > 0) {
+            result = node.children.find((child: Node) => child.type === 'Identifier' && child.origin === 'id');
+        }
+
+        return result;
+    }
+
     getFlatCollection(): Node[] {
         const getFlatChildrenArray = (nodes: Node[]): Node[] => {
             return nodes.reduce((children: Node[], node: Node) => children.concat(node.children), []);
@@ -45,16 +55,23 @@ export default class Collection {
         return flatten(this.collection, this.collection);
     }
 
-    getClosestDeclaration(startingNode: Node, currentNode: Node = null): Node {
-        if (!currentNode) {
-            currentNode = startingNode;
+    getClosestDeclaration(startingNode: Node, currentNode: Node): Node {
+        let result: Node = null;
+
+        if (startingNode && currentNode) {
+            const targetName: string = startingNode.node['name'];
+            const parentNode: Node = this.getParentOf(currentNode);
+            const idNode: Node = this.getIdOf(currentNode);
+            
+    
+            if ((currentNode.type !== 'FunctionDeclaration' && parentNode) ||
+                (currentNode.type === 'FunctionDeclaration' && idNode && idNode.node['name'] !== targetName)) 
+            {
+                result = this.getClosestDeclaration(startingNode, parentNode);
+            }
         }
 
-        if (!!startingNode && !!currentNode && (startingNode === currentNode || startingNode.node['name'] !== currentNode.node['name'])) {
-            this.getClosestDeclaration(startingNode, this.getParentOf(currentNode));
-        }
-
-        return currentNode;
+        return result;
     }
 
     markAliveNodes(): void {
@@ -68,7 +85,7 @@ export default class Collection {
                 node.markAsAlive();
             } else if (node.type === 'CallExpression') {
                 const callee: Node = node.children.find((child: Node) => child.type === 'Identifier' && child.origin === 'callee');
-                const closestDeclaration: Node = this.getClosestDeclaration(callee);
+                const closestDeclaration: Node = this.getClosestDeclaration(callee, callee);
 
                 logger.info(`Detected [${node.type}] at line ${node.location.start.line}: ${callee ? callee.node['name'] : '-'}`);
             } else if (node.type === 'ReturnStatement') {
